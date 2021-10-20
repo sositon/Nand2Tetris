@@ -17,14 +17,87 @@
 //     white_screen()
 //  black_screen()
 
+
+    // R0 <- 8192
+    @8192
+    D=A
+    @0
+    M=D
+
 (LOOP)
+
+    // R1 <- 0
+    @1
+    M=0
+
+    // D = RAM[KBD]
     @KBD
     D=M
-    @white
+    @BLACK
+    D;JGT
+    @WHITE
     D;JEQ
-    (LOOP)
-        @i
-        M=1
+
+    (BLACK)
+
+        //while i<R0
+        @R0
+        D=M
+        @R1
+        D=D-M
+        @LOOP
+        D;JEQ
+
+        //RAM[SCREEN+i] = -1
+        @R1
+        D=M
+        @SCREEN
+        A = A+D
+        M = -1
+
+        // i=i+1
+        @R1
+        M=M+1
+        @BLACK
+        0;JMP
+
+
+    (WHITE)
+
+        //while i<R0
+        @R0
+        D=M
+        @R1
+        D=D-M
+        @LOOP
+        D;JEQ
+
+        //RAM[SCREEN+i] = -1
+        @R1
+        D=M
+        @SCREEN
+        A = A+D
+        M = 0
+
+        // i=i+1
+        @R1
+        M=M+1
+        @WHITE
+        0;JMP
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

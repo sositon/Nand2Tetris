@@ -29,5 +29,36 @@ CHIP CpuMul {
         pc[15];          // address of next instruction
     
     PARTS:
-    // Put you code here:
+    // Instruction Decoding
+    Not(in=instruction[15], out=ainstruction);
+    Not(in=ainstruction, out=cinstruction);
+
+    // Instruction Execution
+    Mux16(a=instruction, b=aluout, sel=cinstruction, out=ainput);
+    Or(a=ainstruction, b=instruction[5], out=aload);
+    ARegister(in=ainput, load=aload, out=registeraout, out[0..14]=addressM);
+
+    Mux16(a=registeraout, b=inM, sel=instruction[12], out=y);
+    And(a=cinstruction, b=instruction[4], out=dload);
+    DRegister(in=aluout, load=dload, out=x);
+
+    ExtendAlu(x=x, y=y, instruction=instruction[6..14],
+    out=outM, out=aluout, zr=zr, ng=ng);
+
+    And(a=cinstruction, b=instruction[3], out=writeM);
+
+    //function(j1, j2, j3, zr, ng) = 1 if the condition is True else 0
+    Not(in=zr, out=nzr);
+    Not(in=ng, out=nng);
+    And(a=nzr, b=nng, out=pos);
+    And(a=zr, b=instruction[1], out=jeq);
+    And(a=ng, b=instruction[2], out=jlt);
+    And(a=pos, b=instruction[0], out=jgt);
+    Or(a=jgt, b=jlt, out=j1);
+    Or(a=j1, b=jeq, out=jmp);
+    And(a=cinstruction, b=jmp, out=loadpc);
+    Not(in=loadpc, out=incpc);
+
+    // Next Instruction Fetching
+    PC(in=registeraout, load=loadpc, inc=incpc, reset=reset,out[0..14]=pc);
 }

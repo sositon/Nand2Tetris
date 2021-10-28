@@ -16,5 +16,46 @@ CHIP ExtendAlu {
      OUT out[16], zr, ng;
      
      PARTS:
-     // Put you code here:
+     // regular alu flag
+     And(a=instruction[7], b=instruction[8], out=regularALU);
+
+     // shift flag
+     Not(in=instruction[8], out=shiftFlag);
+
+     // shifts calculations
+     ShiftLeft(in=x, out=SLx);
+     ShiftRight(in=x, out=SRx);
+     ShiftLeft(in=y, out=SLy);
+     ShiftRight(in=y, out=SRy);
+
+     // if instruction[5] == 0 shift will be right else shift will be left
+     Mux16(a=SRx, b=SLx, sel=instruction[5], out=shiftedX);
+     Mux16(a=SRy, b=SLy, sel=instruction[5], out=shiftedY);
+
+     // if instruction[4] == 0 y wil be shifted else x will be shifted
+     Mux16(a=x, b=shiftedX, sel=instruction[4], out=tmpX);
+     Mux16(a=shiftedY, b=y, sel=instruction[4], out=tmpY);
+
+     // choose tmp's just if shiftFlag == 1
+     Mux16(a=x, b=tmpX, sel=shiftFlag, out=newX);
+     Mux16(a=y, b=tmpY, sel=shiftFlag, out=newY);
+
+
+     ALU(x=x, y=y, zx=instruction[5], nx=instruction[4],
+     zy=instruction[3], ny=instruction[2], f=instruction[1],
+     no=instruction[0], out=outALU, zr=zrALU, ng=ngALU);
+
+     Mux16(a=newY, b=newX, sel=instruction[4], out=outShift, out[0..7]=half1,
+     out[8..15]=half2, out[15]=ngShift);
+     Or8Way(in=half1, out=c1);
+     Or8Way(in=half2, out=c2);
+     Not(in=c1, out=nc1);
+     Not(in=c2, out=nc2);
+     And(a=nc1, b=nc2, out=zrShift);
+
+     // choose the correct output
+     Mux16(a=outShift, b=outALU, sel=regularALU, out=out);
+     Mux(a=zrShift, b=zrALU, sel=regularALU, out=zr);
+     Mux(a=ngShift, b=ngALU, sel=regularALU, out=ng);
+
 }

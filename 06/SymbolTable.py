@@ -11,14 +11,19 @@ class SymbolTable:
     A symbol table that keeps a correspondence between symbolic labels and 
     numeric addresses.
     """
-
+    init_table = {"R0": 0, "R1": 1, "R2": 2, "R3": 3, "R4": 4, "R5": 5,
+                  "R6": 6, "R7": 7,
+                  "R8": 8, "R9": 9, "R10": 10, "R11": 11, "R12": 12, "R13": 13,
+                  "R14": 14, "R15": 15, "SCREEN": 16384, "KBD": 24576}
+    init_next_free = 16
     def __init__(self) -> None:
         """Creates a new symbol table initialized with all the predefined symbols
         and their pre-allocated RAM addresses, according to section 6.2.3 of the
         book.
         """
         # Your code goes here!
-        pass
+        self.table = SymbolTable.init_table
+        self.next_free = SymbolTable.init_next_free
 
     def add_entry(self, symbol: str, address: int) -> None:
         """Adds the pair (symbol, address) to the table.
@@ -28,7 +33,7 @@ class SymbolTable:
             address (int): the address corresponding to the symbol.
         """
         # Your code goes here!
-        pass
+        self.table.update({symbol: address})
 
     def contains(self, symbol: str) -> bool:
         """Does the symbol table contain the given symbol?
@@ -40,7 +45,7 @@ class SymbolTable:
             bool: True if the symbol is contained, False otherwise.
         """
         # Your code goes here!
-        pass
+        return symbol in self.table
 
     def get_address(self, symbol: str) -> int:
         """Returns the address associated with the symbol.
@@ -52,4 +57,4 @@ class SymbolTable:
             int: the address associated with the symbol.
         """
         # Your code goes here!
-        pass
+        return self.table[symbol]

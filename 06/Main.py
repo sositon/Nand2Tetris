@@ -12,8 +12,11 @@ from Parser import Parser
 from Code import Code
 
 
-def assemble_file(
-        input_file: typing.TextIO, output_file: typing.TextIO) -> None:
+def number_to_16bit(num: int) -> str:
+    return '{0:016b}'.format(num)
+
+
+def assemble_file(input_file: typing.TextIO, output_file: typing.TextIO) -> None:
     """Assembles a single file.
 
     Args:
@@ -27,7 +30,10 @@ def assemble_file(
     # *Initialization*
     # Initialize the symbol table with all the predefined symbols and their
     # pre-allocated RAM addresses, according to section 6.2.3 of the book.
-    #
+
+    symbol_table = SymbolTable()
+    parser_first_pass = Parser(input_file=input_file)
+
     # *First Pass*
     # Go through the entire assembly program, line by line, and build the symbol
     # table without generating any code. As you march through the program lines,
@@ -42,7 +48,14 @@ def assemble_file(
     # This pass results in entering all the program’s labels along with their
     # ROM addresses into the symbol table.
     # The program’s variables are handled in the second pass.
-    #
+
+    while parser_first_pass.has_more_commands():
+        if parser_first_pass.command_type() == "L_COMMAND":
+            tmp_symbol = parser_first_pass.symbol()
+            if not symbol_table.contains(tmp_symbol):
+                tmp_address = parser_first_pass.current_line + 1
+                symbol_table.add_entry(tmp_symbol, tmp_address)
+
     # *Second Pass*
     # Now go again through the entire program, and parse each line.
     # Each time a symbolic A-instruction is encountered, namely, @Xxx where Xxx
@@ -55,7 +68,35 @@ def assemble_file(
     # The allocated RAM addresses are consecutive numbers, starting at address
     # 16 (just after the addresses allocated to the predefined symbols).
     # After the command is translated, write the translation to the output file.
-    pass
+
+    parser_second_pass = Parser(input_file)
+
+    while parser_second_pass.has_more_commands():
+        # A command
+        if parser_second_pass.command_type() == "A_COMMAND":
+            if not parser_second_pass.symbol().isdigit():
+                tmp_symbol = parser_second_pass.symbol()
+                if symbol_table.contains(tmp_symbol):
+                    output_file.write(number_to_16bit(symbol_table.get_address(tmp_symbol)))
+                else:
+                    symbol_table.add_entry(tmp_symbol, symbol_table.next_free)
+                    symbol_table.next_free += 1
+                    output_file.write(number_to_16bit(symbol_table.get_address(tmp_symbol)))
+            output_file.write(number_to_16bit(int(parser_second_pass.symbol())))
+
+        # C command
+        if parser_second_pass.command_type() == "C_COMMAND":
+            comp = Code.comp(parser_second_pass.current_line)
+            dest = Code.dest(parser_second_pass.current_line)
+            jump = Code.jump(parser_second_pass.current_line)
+            output_file.write("111" + comp + dest + jump)
+        # L command
+        if parser_second_pass.command_type() == "L_COMMAND":
+            tmp_address = symbol_table.get_address(parser_second_pass.symbol())
+            output_file.write(number_to_16bit(tmp_address))
+
+
+
 
 
 if "__main__" == __name__:

@@ -20,10 +20,19 @@ class Parser:
         Args:
             input_file (typing.TextIO): input file.
         """
-        # Your code goes here!
-        # A good place to start is:
-        # input_lines = input_file.read().splitlines()
-        pass
+        input_lines = input_file.read().splitlines()
+        for line in input_lines:
+            if "\n" in line:
+                input_lines.remove(line)
+            if line[0] == "/" and line[1] == "/":
+                input_lines.remove(line)
+            line.replace(" ", "")
+
+        self.lines = input_lines
+        self.current_line = 0
+        self.end_line = len(input_lines)
+        self.current_command = input_lines[self.current_line]
+
 
     def has_more_commands(self) -> bool:
         """Are there more commands in the input?
@@ -31,15 +40,16 @@ class Parser:
         Returns:
             bool: True if there are more commands, False otherwise.
         """
-        # Your code goes here!
-        pass
+        return bool(self.lines)
 
     def advance(self) -> None:
         """Reads the next command from the input and makes it the current command.
         Should be called only if has_more_commands() is true.
         """
         # Your code goes here!
-        pass
+        if self.has_more_commands():
+            self.current_line += 1
+            self.current_command = self.lines[self.current_line]
 
     def command_type(self) -> str:
         """
@@ -49,8 +59,11 @@ class Parser:
             "C_COMMAND" for dest=comp;jump
             "L_COMMAND" (actually, pseudo-command) for (Xxx) where Xxx is a symbol
         """
-        # Your code goes here!
-        pass
+        if self.current_command[0] == "@":
+            return "A_COMMAND"
+        if self.current_command[0] == "(":
+            return "L_COMMAND"
+        return "C_COMMAND"
 
     def symbol(self) -> str:
         """
@@ -60,7 +73,10 @@ class Parser:
             "L_COMMAND".
         """
         # Your code goes here!
-        pass
+        command = self.command_type()
+        if command == "A_COMMAND":
+            return self.current_command[1:]
+        return self.current_command[1:-1]
 
     def dest(self) -> str:
         """
@@ -69,7 +85,7 @@ class Parser:
             only when commandType() is "C_COMMAND".
         """
         # Your code goes here!
-        pass
+        return self.current_command.split("=")[0]
 
     def comp(self) -> str:
         """
@@ -78,7 +94,8 @@ class Parser:
             only when commandType() is "C_COMMAND".
         """
         # Your code goes here!
-        pass
+        comp_dest = self.current_command.split("=")[1]
+        return comp_dest.split(";")[0]
 
     def jump(self) -> str:
         """
@@ -87,4 +104,5 @@ class Parser:
             only when commandType() is "C_COMMAND".
         """
         # Your code goes here!
-        pass
+        comp_dest = self.current_command.split("=")[1]
+        return comp_dest.split(";")[1]

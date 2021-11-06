@@ -10,16 +10,21 @@ import typing
 from SymbolTable import SymbolTable
 from Parser import Parser
 from Code import Code
+
 A = "A_COMMAND"
 C = "C_COMMAND"
 L = "L_COMMAND"
+C_REGULAR = "111"
+C_SHIFT = "101"
+NEW_LINE = "\n"
 
 
 def number_to_16bit(num: int) -> str:
     return '{0:016b}'.format(num)
 
 
-def assemble_file(input_file: typing.TextIO, output_file: typing.TextIO) -> None:
+def assemble_file(input_file: typing.TextIO,
+                  output_file: typing.TextIO) -> None:
     """Assembles a single file.
 
     Args:
@@ -56,8 +61,11 @@ def assemble_file(input_file: typing.TextIO, output_file: typing.TextIO) -> None
         if parser.command_type() == L:
             tmp_symbol = parser.symbol()
             if not symbol_table.contains(tmp_symbol):
-                tmp_address = parser.current_line + 1
+                tmp_address = parser.current_line
                 symbol_table.add_entry(tmp_symbol, tmp_address)
+                parser.lines.pop(tmp_address)
+                parser.current_line -= 1
+                parser.end_line -= 1
         parser.advance()
 
     # *Second Pass*
@@ -77,39 +85,33 @@ def assemble_file(input_file: typing.TextIO, output_file: typing.TextIO) -> None
     while parser.has_more_commands():
         # A command
         if parser.command_type() == A:
-            if not parser.symbol().isdigit():
-                tmp_symbol = parser.symbol()
+            tmp_symbol = parser.symbol()
+            if not tmp_symbol.isdigit():
                 if symbol_table.contains(tmp_symbol):
                     output_file.write(number_to_16bit(
-                        symbol_table.get_address(tmp_symbol)) + "\n")
+                        symbol_table.get_address(tmp_symbol)) + NEW_LINE)
                 else:
                     symbol_table.add_entry(tmp_symbol, symbol_table.next_free)
                     symbol_table.next_free += 1
                     output_file.write(number_to_16bit(
-                        symbol_table.get_address(tmp_symbol)) + "\n")
+                        symbol_table.get_address(tmp_symbol)) + NEW_LINE)
+            else:
+                output_file.write(number_to_16bit(int(tmp_symbol)) + NEW_LINE)
         # C command
         elif parser.command_type() == C:
-            cur_command = parser.current_command
-            if "=" in cur_command:
-                cur_command = cur_command.split("=")
-                dest = Code.dest(cur_command[0])
-                comp = Code.comp(cur_command[1])
-                jump = Code.jump("")
-                output_file.write("111" + comp + dest + jump + "\n")
+            dest = Code.dest(parser.dest())
+            comp = parser.comp()
+            comp_b = Code.comp(comp)
+            jump = Code.jump(parser.jump())
+            if ">" in comp or "<" in comp:
+                output_file.write(C_SHIFT + comp_b + dest + jump + NEW_LINE)
             else:
-                cur_command = cur_command.split(";")
-                dest = Code.dest("")
-                comp = Code.comp(cur_command[0])
-                jump = Code.jump(cur_command[1])
-                output_file.write("111" + comp + dest + jump + "\n")
+                output_file.write(C_REGULAR + comp_b + dest + jump + NEW_LINE)
         # L command
         elif parser.command_type() == L:
             tmp_address = symbol_table.get_address(parser.symbol())
-            output_file.write(number_to_16bit(tmp_address) + "\n")
+            output_file.write(number_to_16bit(tmp_address) + NEW_LINE)
         parser.advance()
-
-
-
 
 
 if "__main__" == __name__:

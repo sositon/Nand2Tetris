@@ -49,15 +49,15 @@ class Parser:
         Returns:
             bool: True if there are more commands, False otherwise.
         """
-        return bool(self.current_line < self.end_line - 1)
+        return bool(self.current_line < self.end_line)
 
     def advance(self) -> None:
         """Reads the next command from the input and makes it the current command.
         Should be called only if has_more_commands() is true.
         """
         # Your code goes here!
+        self.current_line += 1
         if self.has_more_commands():
-            self.current_line += 1
             self.current_command = self.lines[self.current_line]
 
     def command_type(self) -> str:
@@ -94,7 +94,12 @@ class Parser:
             only when commandType() is "C_COMMAND".
         """
         # Your code goes here!
-        return self.current_command.split("=")[0]
+
+        dest = self.current_command
+        if "=" in dest:
+            dest = dest.split("=")
+            return dest[0]
+        return ""
 
     def comp(self) -> str:
         """
@@ -103,8 +108,17 @@ class Parser:
             only when commandType() is "C_COMMAND".
         """
         # Your code goes here!
-        comp_dest = self.current_command.split("=")[1]
-        return comp_dest.split(";")[0]
+        comp = self.current_command
+        if "=" in comp:
+            comp = comp.split("=")
+            if ";" in comp[1]:
+                comp = comp[1].split(";")
+                return comp[0]
+            return comp[1]
+        elif ";" in comp:
+            comp = comp.split(";")
+            return comp[0]
+        return ""
 
     def jump(self) -> str:
         """
@@ -113,5 +127,8 @@ class Parser:
             only when commandType() is "C_COMMAND".
         """
         # Your code goes here!
-        comp_dest = self.current_command.split("=")[1]
-        return comp_dest.split(";")[1]
+        jump = self.current_command
+        if ";" in jump:
+            jump = jump.split(";")
+            return jump[1]
+        return ""

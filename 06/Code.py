@@ -8,7 +8,7 @@ Unported License (https://creativecommons.org/licenses/by-nc-sa/3.0/).
 
 class Code:
     """Translates Hack assembly language mnemonics into binary codes."""
-    dest_dic = {"": "000", "M": "001", "D": "010", "DM": "011", "A": "100",
+    dest_dic = {"": "000", "M": "001", "D": "010", "MD": "011", "A": "100",
                 "AM": "101", "AD": "110", "ADM": "111"}
     jump_dic = {"": "000", "JGT": "001", "JEQ": "010", "JGE": "011", "JLT":
                 "100", "JNE": "101", "JLE": "110", "JMP": "111"}

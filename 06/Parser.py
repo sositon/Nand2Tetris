@@ -21,18 +21,27 @@ class Parser:
             input_file (typing.TextIO): input file.
         """
         input_lines = input_file.read().splitlines()
+        new_lines = list()
         for line in input_lines:
-            if "\n" in line:
-                input_lines.remove(line)
-            if line[0] == "/" and line[1] == "/":
-                input_lines.remove(line)
-            line.replace(" ", "")
+            line = line.replace(" ", "")
+            if line[0:2] == "//":
+                continue
+            if not line:
+                continue
+            line = line.split("//")[0]
+            new_lines.append(line)
 
-        self.lines = input_lines
+
+
+        self.lines = new_lines
         self.current_line = 0
-        self.end_line = len(input_lines)
-        self.current_command = input_lines[self.current_line]
+        self.end_line = len(new_lines)
+        self.current_command = new_lines[self.current_line]
 
+    def init_between_passes(self) -> None:
+        self.current_line = 0
+        self.current_command = self.lines[self.current_line]
+        return
 
     def has_more_commands(self) -> bool:
         """Are there more commands in the input?
@@ -40,7 +49,7 @@ class Parser:
         Returns:
             bool: True if there are more commands, False otherwise.
         """
-        return bool(self.lines)
+        return bool(self.current_line < self.end_line - 1)
 
     def advance(self) -> None:
         """Reads the next command from the input and makes it the current command.

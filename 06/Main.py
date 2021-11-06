@@ -10,6 +10,9 @@ import typing
 from SymbolTable import SymbolTable
 from Parser import Parser
 from Code import Code
+A = "A_COMMAND"
+C = "C_COMMAND"
+L = "L_COMMAND"
 
 
 def number_to_16bit(num: int) -> str:
@@ -32,7 +35,7 @@ def assemble_file(input_file: typing.TextIO, output_file: typing.TextIO) -> None
     # pre-allocated RAM addresses, according to section 6.2.3 of the book.
 
     symbol_table = SymbolTable()
-    parser_first_pass = Parser(input_file=input_file)
+    parser = Parser(input_file=input_file)
 
     # *First Pass*
     # Go through the entire assembly program, line by line, and build the symbol
@@ -49,12 +52,13 @@ def assemble_file(input_file: typing.TextIO, output_file: typing.TextIO) -> None
     # ROM addresses into the symbol table.
     # The program’s variables are handled in the second pass.
 
-    while parser_first_pass.has_more_commands():
-        if parser_first_pass.command_type() == "L_COMMAND":
-            tmp_symbol = parser_first_pass.symbol()
+    while parser.has_more_commands():
+        if parser.command_type() == L:
+            tmp_symbol = parser.symbol()
             if not symbol_table.contains(tmp_symbol):
-                tmp_address = parser_first_pass.current_line + 1
+                tmp_address = parser.current_line + 1
                 symbol_table.add_entry(tmp_symbol, tmp_address)
+        parser.advance()
 
     # *Second Pass*
     # Now go again through the entire program, and parse each line.
@@ -69,31 +73,40 @@ def assemble_file(input_file: typing.TextIO, output_file: typing.TextIO) -> None
     # 16 (just after the addresses allocated to the predefined symbols).
     # After the command is translated, write the translation to the output file.
 
-    parser_second_pass = Parser(input_file)
-
-    while parser_second_pass.has_more_commands():
+    parser.init_between_passes()
+    while parser.has_more_commands():
         # A command
-        if parser_second_pass.command_type() == "A_COMMAND":
-            if not parser_second_pass.symbol().isdigit():
-                tmp_symbol = parser_second_pass.symbol()
+        if parser.command_type() == A:
+            if not parser.symbol().isdigit():
+                tmp_symbol = parser.symbol()
                 if symbol_table.contains(tmp_symbol):
-                    output_file.write(number_to_16bit(symbol_table.get_address(tmp_symbol)))
+                    output_file.write(number_to_16bit(
+                        symbol_table.get_address(tmp_symbol)) + "\n")
                 else:
                     symbol_table.add_entry(tmp_symbol, symbol_table.next_free)
                     symbol_table.next_free += 1
-                    output_file.write(number_to_16bit(symbol_table.get_address(tmp_symbol)))
-            output_file.write(number_to_16bit(int(parser_second_pass.symbol())))
-
+                    output_file.write(number_to_16bit(
+                        symbol_table.get_address(tmp_symbol)) + "\n")
         # C command
-        if parser_second_pass.command_type() == "C_COMMAND":
-            comp = Code.comp(parser_second_pass.current_line)
-            dest = Code.dest(parser_second_pass.current_line)
-            jump = Code.jump(parser_second_pass.current_line)
-            output_file.write("111" + comp + dest + jump)
+        elif parser.command_type() == C:
+            cur_command = parser.current_command
+            if "=" in cur_command:
+                cur_command = cur_command.split("=")
+                dest = Code.dest(cur_command[0])
+                comp = Code.comp(cur_command[1])
+                jump = Code.jump("")
+                output_file.write("111" + comp + dest + jump + "\n")
+            else:
+                cur_command = cur_command.split(";")
+                dest = Code.dest("")
+                comp = Code.comp(cur_command[0])
+                jump = Code.jump(cur_command[1])
+                output_file.write("111" + comp + dest + jump + "\n")
         # L command
-        if parser_second_pass.command_type() == "L_COMMAND":
-            tmp_address = symbol_table.get_address(parser_second_pass.symbol())
-            output_file.write(number_to_16bit(tmp_address))
+        elif parser.command_type() == L:
+            tmp_address = symbol_table.get_address(parser.symbol())
+            output_file.write(number_to_16bit(tmp_address) + "\n")
+        parser.advance()
 
 
 

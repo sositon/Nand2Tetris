@@ -16,4 +16,82 @@
 // You can implement any sorting algorithm as long as its runtime complexity is 
 // at most C*O(N^2), like bubble-sort. 
 
-// Put your code here.
+@R14
+D=M
+@OuterIndex
+M=D 
+
+
+(OuterLoop)
+@R14
+D = M
+@InnerIndex
+M=D 
+        
+        
+(InnerLoop)
+@InnerIndex
+A = M+1
+D = M 
+A = A-1 
+D = D - M 
+
+@SWAP
+D;JGT
+
+(IncrementInner)
+@InnerIndex
+M = M + 1
+@R14
+D = M
+@R15
+D = D + M
+@InnerIndex
+D = D - M
+D = D - 1
+@InnerLoop
+D;JGT
+
+
+@OuterIndex
+M=M+1
+@R14
+D = M
+@R15
+D=D+M
+@OuterIndex
+D=D-M
+D=D-1
+
+@OuterLoop 
+D;JGT
+
+@END
+0;JMP
+
+(SWAP)
+@InnerIndex
+A = M + 1
+D = M
+
+@Temp
+M = D
+
+@InnerIndex
+A = M
+D = M
+A =A+1
+M = D
+
+@Temp
+D = M
+
+@InnerIndex
+A = M
+M = D
+
+@IncrementInner
+0;JMP
+
+(END)
+

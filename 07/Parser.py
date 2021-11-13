@@ -23,8 +23,20 @@ class Parser:
         """
         # Your code goes here!
         # A good place to start is:
-        # input_lines = input_file.read().splitlines()
-        pass
+        input_lines = input_file.read().splitlines()
+        new_lines = list()
+        for line in input_lines:
+            line = line.split(" ")
+            if "//" in line[0]:
+                continue
+            if not line[0]:
+                continue
+            new_lines.append(line)
+
+        self.lines = new_lines
+        self.end_line = len(new_lines)
+        self.line_counter = 0
+        self.cur_command = self.lines[self.line_counter]
 
     def has_more_commands(self) -> bool:
         """Are there more commands in the input?
@@ -33,7 +45,7 @@ class Parser:
             bool: True if there are more commands, False otherwise.
         """
         # Your code goes here!
-        pass
+        return bool(self.line_counter < self.end_line)
 
     def advance(self) -> None:
         """Reads the next command from the input and makes it the current 
@@ -41,7 +53,9 @@ class Parser:
         there is no current command.
         """
         # Your code goes here!
-        pass
+        self.line_counter += 1
+        if self.has_more_commands():
+            self.cur_command = self.lines[self.line_counter]
 
     def command_type(self) -> str:
         """
@@ -53,7 +67,15 @@ class Parser:
             "C_RETURN", "C_CALL".
         """
         # Your code goes here!
-        pass
+        command_length = len(self.cur_command)
+        command = self.cur_command[0]
+        if command_length == 1:
+            return "C_ARITHMETIC"
+        if command_length == 3:
+            if command == "pop":
+                return "C_POP"
+            if command == "push":
+                return "C_PUSH"
 
     def arg1(self) -> str:
         """
@@ -63,7 +85,9 @@ class Parser:
             Should not be called if the current command is "C_RETURN".
         """
         # Your code goes here!
-        pass
+
+        return self.cur_command[0] if self.command_type() == "C_ARITHMETIC" \
+            else self.cur_command[1]
 
     def arg2(self) -> int:
         """
@@ -73,4 +97,4 @@ class Parser:
             "C_FUNCTION" or "C_CALL".
         """
         # Your code goes here!
-        pass
+        return int(self.cur_command[2])

@@ -22,7 +22,19 @@ def translate_file(
     # Your code goes here!
     # Note: you can get the input file's name using:
     # input_filename, input_extension = os.path.splitext(os.path.basename(input_file.name))
-    pass
+    parser = Parser(input_file)
+    code_writer = CodeWriter(output_file)
+    # push tests
+    print(CodeWriter.push_constant("constant", 5))
+    print(CodeWriter.push_lcl_arg_this_that("local", 2))
+    print(CodeWriter.push_tmp_pt("temp", 3))
+    print(code_writer.push_static("static", 3))
+    # pop tests
+    # print(CodeWriter.pop_lcl_arg_this_that("local", 2))
+    print(CodeWriter.pop_tmp_pt("temp", 3))
+    print(code_writer.pop_static("static", 3))
+
+
 
 
 if "__main__" == __name__:

@@ -21,20 +21,19 @@ def translate_file(
     """
     # Your code goes here!
     # Note: you can get the input file's name using:
-    # input_filename, input_extension = os.path.splitext(os.path.basename(input_file.name))
+    input_filename, input_extension = os.path.splitext(
+        os.path.basename(input_file.name))
     parser = Parser(input_file)
     code_writer = CodeWriter(output_file)
-    # push tests
-    print(CodeWriter.push_constant("constant", 5))
-    print(CodeWriter.push_lcl_arg_this_that("local", 2))
-    print(CodeWriter.push_tmp_pt("temp", 3))
-    print(code_writer.push_static("static", 3))
-    # pop tests
-    # print(CodeWriter.pop_lcl_arg_this_that("local", 2))
-    print(CodeWriter.pop_tmp_pt("temp", 3))
-    print(code_writer.pop_static("static", 3))
-
-
+    code_writer.set_file_name(input_filename)
+    while parser.has_more_commands():
+        com_typ = parser.command_type()
+        if com_typ == "C_ARITHMETIC":
+            code_writer.write_arithmetic(parser.arg1())
+        elif com_typ == "C_POP" or com_typ == "C_PUSH":
+            code_writer.write_push_pop(com_typ, parser.arg1(), parser.arg2())
+        parser.advance()
+    code_writer.output_stream.write(code_writer.END_LOOP)
 
 
 if "__main__" == __name__:

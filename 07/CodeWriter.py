@@ -17,8 +17,17 @@ class CodeWriter:
               "M=D\n"
     pop_SP = "@SP\n" \
              "AM=M-1\n" \
-             "A=A+1\n" \
-             "D=M\n"
+             "D=M\n" \
+             "M=0\n"
+    TRUE_LABEL = "(TRUE)\n" \
+                 "@SP\n" \
+                 "A=M-1\n" \
+                 "M=-1\n" \
+                 "@END\n" \
+                 "0;JMP\n"
+    END_LOOP = "(END)\n" \
+               "@END\n" \
+               "0;JMP\n"
 
     def __init__(self, output_stream: typing.TextIO) -> None:
         """Initializes the CodeWriter.
@@ -27,8 +36,7 @@ class CodeWriter:
             output_stream (typing.TextIO): output stream.
         """
         self.output_stream = output_stream
-        name = output_stream.name.split("/")[-1].replace(".asm", "")
-        self.file_name = name
+        self.file_name = ""
 
     def set_file_name(self, filename: str) -> None:
         """Informs the code writer that the translation of a new VM file is 
@@ -38,7 +46,7 @@ class CodeWriter:
             filename (str): The name of the VM file.
         """
         # Your code goes here!
-        pass
+        self.file_name = filename
 
     def write_arithmetic(self, command: str) -> None:
         """Writes the assembly code that is the translation of the given 
@@ -48,7 +56,17 @@ class CodeWriter:
             command (str): an arithmetic command.
         """
         # Your code goes here!
-        pass
+        arithmetic_functions = {"add": self.add_sub,
+                                "sub": self.add_sub,
+                                "neg": self.neg_not,
+                                "eq": None,
+                                "gt": None,
+                                "lt": None,
+                                "and": self.and_or,
+                                "or": self.and_or,
+                                "not": self.neg_not
+                                }
+        self.output_stream.write(arithmetic_functions[command](command))
 
     def write_push_pop(self, command: str, segment: str, index: int) -> None:
         """Writes the assembly code that is the translation of the given 
@@ -71,12 +89,63 @@ class CodeWriter:
                               "static": self.push_static}
             self.output_stream.write(push_functions[segment](segment, index))
         elif command == "C_POP":
-            pass
+            pop_functions = {"local": self.pop_lcl_arg_this_that,
+                             "argument": self.pop_lcl_arg_this_that,
+                             "this": self.pop_lcl_arg_this_that,
+                             "that": self.pop_lcl_arg_this_that,
+                             "temp": self.pop_tmp_pt,
+                             "pointer": self.pop_tmp_pt,
+                             "static": self.pop_static}
+            self.output_stream.write(pop_functions[segment](segment, index))
 
     def close(self) -> None:
         """Closes the output file."""
         # Your code goes here!
-        pass
+        self.output_stream.close()
+
+    @staticmethod
+    def add_sub(command: str) -> str:
+        end = "M=D+M\n" if command == "add" else "M=M-D\n"
+        return f"// {command}\n" \
+               f"@SP\n" \
+               f"AM=M-1\n" \
+               f"D=M\n" \
+               f"M=0\n" \
+               f"A=A-1\n" + end
+
+    @staticmethod
+    def neg_not(command: str) -> str:
+        operand = "!" if command == "not" else "-"
+        return f"// {command}\n" \
+               f"@SP\n" \
+               f"A=M-1\n" \
+               f"M={operand}M\n"
+
+    @staticmethod
+    def eq_gt_lt(command: str) -> str:
+        jump_dic = {"eq": "JEQ", "gt": "JGT", "lt": "JLT"}
+        return f"// {command}\n" \
+               f"@SP\n" \
+               f"AM=M-1\n" \
+               f"D=M\n" \
+               f"M=0\n" \
+               f"A=A-1\n" \
+               f"D=M-D\n" \
+               f"@TRUE\n" \
+               f"D;{jump_dic[command]}\n" \
+               f"A=M-1\n" \
+               f"M=-1\n"
+
+    @staticmethod
+    def and_or(command: str) -> str:
+        operand = "&" if command == "and" else "|"
+        return f"// {command}\n" \
+               f"@SP\n" \
+               f"AM=M-1\n" \
+               f"D=M\n" \
+               f"M=0\n" \
+               f"A=A-1\n" \
+               f"M=D{operand}M\n"
 
     @staticmethod
     def push_constant(segment: str, index: int) -> str:
@@ -96,12 +165,16 @@ class CodeWriter:
     @staticmethod
     def pop_lcl_arg_this_that(segment: str, index: int) -> str:
         return f"// pop {segment} {index}\n" \
-               "@SP\n" \
-               "AM=M-1\n" \
-               "A=A+1\n" \
-               "D=M\n" \
-               f"@{segment}\n" \
-               f""
+               f"@{index}\n" \
+               f"D=A\n" \
+               f"@{CodeWriter.segment_dic[segment]}\n" \
+               f"D=D+M\n" \
+               f"@R15\n" \
+               f"M=D\n" \
+               + CodeWriter.pop_SP + \
+               f"@R15\n" \
+               f"A=M\n" \
+               f"M=D\n"
 
     @staticmethod
     def push_tmp_pt(segment: str, index: int) -> str:
@@ -124,4 +197,3 @@ class CodeWriter:
         return f"// pop {segment} {index}\n" + CodeWriter.pop_SP + \
                f"@{self.file_name}.{index}\n" \
                f"M=D\n"
-

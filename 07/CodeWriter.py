@@ -19,12 +19,6 @@ class CodeWriter:
              "AM=M-1\n" \
              "D=M\n" \
              "M=0\n"
-    TRUE_LABEL = "(TRUE)\n" \
-                 "@SP\n" \
-                 "A=M-1\n" \
-                 "M=-1\n" \
-                 "@END\n" \
-                 "0;JMP\n"
     END_LOOP = "(END)\n" \
                "@END\n" \
                "0;JMP\n"
@@ -58,9 +52,9 @@ class CodeWriter:
         """
         # Your code goes here!
         arithmetic_functions = {"add": self.add_sub, "sub": self.add_sub,
-                                "eq": self.eq_gt_lt,
-                                "gt": self.eq_gt_lt,
-                                "lt": self.eq_gt_lt,
+                                "eq": self.eq,
+                                "gt": self.gt,
+                                "lt": self.lt,
                                 "and": self.and_or, "or": self.and_or,
                                 "not": self.neg_not_shift,
                                 "neg": self.neg_not_shift,
@@ -120,19 +114,113 @@ class CodeWriter:
                f"A=M-1\n" \
                f"M={operand_dic[command]}\n"
 
-    def eq_gt_lt(self, command: str) -> str:
-        jump_dic = {"eq": "JEQ", "gt": "JGT", "lt": "JLT"}
+    def eq(self, command: str) -> str:
         res = f"// {command}\n" \
-              + CodeWriter.pop_SP + \
-              f"A=A-1\n" \
-              f"D=M-D\n" \
-              f"@TRUE.{self.label_counter}\n" \
-              f"D;{jump_dic[command]}\n" \
+              "@SP\n" \
+              "AM=M-1\n" \
+              "D=M\n" \
+              "M=0\n" \
+              "@R15\n" \
+              "M=D\n" \
+              f"@POS.{self.label_counter}\n" \
+              f"D;JGT\n" \
               f"@SP\n" \
               f"A=M-1\n" \
+              f"D=M\n" \
               f"M=0\n" \
               f"@CONTINUE.{self.label_counter}\n" \
+              f"D;JGT\n" \
+              f"@REG.{self.label_counter}\n" \
               f"0;JMP\n" \
+              f"(POS.{self.label_counter})\n" \
+              f"@SP\n" \
+              f"A=M-1\n" \
+              f"D=M\n" \
+              f"M=0\n" \
+              f"@CONTINUE.{self.label_counter}\n" \
+              f"D;JLT\n" \
+              f"(REG.{self.label_counter})\n" \
+              f"@R15\n" \
+              f"D=D-M\n" \
+              f"@CONTINUE.{self.label_counter}\n" \
+              f"D;JLT\n" \
+              f"D;JGT\n" \
+              f"(TRUE.{self.label_counter})\n" \
+              f"@SP\n" \
+              f"A=M-1\n" \
+              f"M=-1\n" \
+              f"(CONTINUE.{self.label_counter})\n"
+        self.label_counter += 1
+        return res
+
+    def gt(self, command: str) -> str:
+        res = f"// {command}\n" \
+              "@SP\n" \
+              "AM=M-1\n" \
+              "D=M\n" \
+              "M=0\n" \
+              "@R15\n" \
+              "M=D\n" \
+              f"@NEG.{self.label_counter}\n" \
+              f"D;JLT\n" \
+              f"@SP\n" \
+              f"A=M-1\n" \
+              f"D=M\n" \
+              f"M=0\n" \
+              f"@CONTINUE.{self.label_counter}\n" \
+              f"D;JLT\n" \
+              f"@REG.{self.label_counter}\n" \
+              f"0;JMP\n" \
+              f"(NEG.{self.label_counter})\n" \
+              f"@SP\n" \
+              f"A=M-1\n" \
+              f"D=M\n" \
+              f"M=0\n" \
+              f"@TRUE.{self.label_counter}\n" \
+              f"D;JGT\n" \
+              f"(REG.{self.label_counter})\n" \
+              f"@R15\n" \
+              f"D=D-M\n" \
+              f"@CONTINUE.{self.label_counter}\n" \
+              f"D;JLT\n" \
+              f"(TRUE.{self.label_counter})\n" \
+              f"@SP\n" \
+              f"A=M-1\n" \
+              f"M=-1\n" \
+              f"(CONTINUE.{self.label_counter})\n"
+        self.label_counter += 1
+        return res
+
+    def lt(self, command: str) -> str:
+        res = f"// {command}\n" \
+              "@SP\n" \
+              "AM=M-1\n" \
+              "D=M\n" \
+              "M=0\n" \
+              "@R15\n" \
+              "M=D\n" \
+              f"@POS.{self.label_counter}\n" \
+              f"D;JGT\n" \
+              f"@SP\n" \
+              f"A=M-1\n" \
+              f"D=M\n" \
+              f"M=0\n" \
+              f"@CONTINUE.{self.label_counter}\n" \
+              f"D;JGT\n" \
+              f"@REG.{self.label_counter}\n" \
+              f"0;JMP\n" \
+              f"(POS.{self.label_counter})\n" \
+              f"@SP\n" \
+              f"A=M-1\n" \
+              f"D=M\n" \
+              f"M=0\n" \
+              f"@TRUE.{self.label_counter}\n" \
+              f"D;JLT\n" \
+              f"(REG.{self.label_counter})\n" \
+              f"@R15\n" \
+              f"D=D-M\n" \
+              f"@CONTINUE.{self.label_counter}\n" \
+              f"D;JGT\n" \
               f"(TRUE.{self.label_counter})\n" \
               f"@SP\n" \
               f"A=M-1\n" \

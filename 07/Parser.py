@@ -26,12 +26,17 @@ class Parser:
         input_lines = input_file.read().splitlines()
         new_lines = list()
         for line in input_lines:
+            line = line.replace("\t", "")
             line = line.split(" ")
             if "//" in line[0]:
                 continue
             if not line[0]:
                 continue
-            new_lines.append(line)
+            new_line = list()
+            for arg in line:
+                if arg and "//" not in arg:
+                    new_line.append(arg)
+            new_lines.append(new_line)
 
         self.lines = new_lines
         self.end_line = len(new_lines)

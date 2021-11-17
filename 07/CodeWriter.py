@@ -37,6 +37,7 @@ class CodeWriter:
         """
         self.output_stream = output_stream
         self.file_name = ""
+        self.label_counter = 0
 
     def set_file_name(self, filename: str) -> None:
         """Informs the code writer that the translation of a new VM file is 
@@ -56,15 +57,15 @@ class CodeWriter:
             command (str): an arithmetic command.
         """
         # Your code goes here!
-        arithmetic_functions = {"add": self.add_sub,
-                                "sub": self.add_sub,
-                                "neg": self.neg_not,
-                                "eq": None,
-                                "gt": None,
-                                "lt": None,
-                                "and": self.and_or,
-                                "or": self.and_or,
-                                "not": self.neg_not
+        arithmetic_functions = {"add": self.add_sub, "sub": self.add_sub,
+                                "eq": self.eq_gt_lt,
+                                "gt": self.eq_gt_lt,
+                                "lt": self.eq_gt_lt,
+                                "and": self.and_or, "or": self.and_or,
+                                "not": self.neg_not_shift,
+                                "neg": self.neg_not_shift,
+                                "shiftleft": self.neg_not_shift,
+                                "shiftright": self.neg_not_shift
                                 }
         self.output_stream.write(arithmetic_functions[command](command))
 
@@ -103,50 +104,52 @@ class CodeWriter:
         # Your code goes here!
         self.output_stream.close()
 
+    # arithmetic implementations
     @staticmethod
     def add_sub(command: str) -> str:
         end = "M=D+M\n" if command == "add" else "M=M-D\n"
-        return f"// {command}\n" \
-               f"@SP\n" \
-               f"AM=M-1\n" \
-               f"D=M\n" \
-               f"M=0\n" \
+        return f"// {command}\n" + CodeWriter.pop_SP + \
                f"A=A-1\n" + end
 
     @staticmethod
-    def neg_not(command: str) -> str:
-        operand = "!" if command == "not" else "-"
+    def neg_not_shift(command: str) -> str:
+        operand_dic = {"neg": "-M", "not": "!M",
+                       "shiftleft": "M<<", "shiftright": "M>>"}
         return f"// {command}\n" \
                f"@SP\n" \
                f"A=M-1\n" \
-               f"M={operand}M\n"
+               f"M={operand_dic[command]}\n"
 
-    @staticmethod
-    def eq_gt_lt(command: str) -> str:
+    def eq_gt_lt(self, command: str) -> str:
         jump_dic = {"eq": "JEQ", "gt": "JGT", "lt": "JLT"}
-        return f"// {command}\n" \
-               f"@SP\n" \
-               f"AM=M-1\n" \
-               f"D=M\n" \
-               f"M=0\n" \
-               f"A=A-1\n" \
-               f"D=M-D\n" \
-               f"@TRUE\n" \
-               f"D;{jump_dic[command]}\n" \
-               f"A=M-1\n" \
-               f"M=-1\n"
+        res = f"// {command}\n" \
+              + CodeWriter.pop_SP + \
+              f"A=A-1\n" \
+              f"D=M-D\n" \
+              f"@TRUE.{self.label_counter}\n" \
+              f"D;{jump_dic[command]}\n" \
+              f"@SP\n" \
+              f"A=M-1\n" \
+              f"M=0\n" \
+              f"@CONTINUE.{self.label_counter}\n" \
+              f"0;JMP\n" \
+              f"(TRUE.{self.label_counter})\n" \
+              f"@SP\n" \
+              f"A=M-1\n" \
+              f"M=-1\n" \
+              f"(CONTINUE.{self.label_counter})\n"
+        self.label_counter += 1
+        return res
 
     @staticmethod
     def and_or(command: str) -> str:
         operand = "&" if command == "and" else "|"
         return f"// {command}\n" \
-               f"@SP\n" \
-               f"AM=M-1\n" \
-               f"D=M\n" \
-               f"M=0\n" \
+               + CodeWriter.pop_SP + \
                f"A=A-1\n" \
                f"M=D{operand}M\n"
 
+    # push pop implementations
     @staticmethod
     def push_constant(segment: str, index: int) -> str:
         return f"// push {segment} {index}\n" \

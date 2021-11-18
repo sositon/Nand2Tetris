@@ -182,7 +182,7 @@ class CodeWriter:
               f"@R15\n" \
               f"D=D-M\n" \
               f"@CONTINUE.{self.label_counter}\n" \
-              f"D;JLT\n" \
+              f"D;JLE\n" \
               f"(TRUE.{self.label_counter})\n" \
               f"@SP\n" \
               f"A=M-1\n" \
@@ -220,7 +220,7 @@ class CodeWriter:
               f"@R15\n" \
               f"D=D-M\n" \
               f"@CONTINUE.{self.label_counter}\n" \
-              f"D;JGT\n" \
+              f"D;JGE\n" \
               f"(TRUE.{self.label_counter})\n" \
               f"@SP\n" \
               f"A=M-1\n" \

@@ -32,6 +32,14 @@ def translate_file(
             code_writer.write_arithmetic(parser.arg1())
         elif com_typ == "C_POP" or com_typ == "C_PUSH":
             code_writer.write_push_pop(com_typ, parser.arg1(), parser.arg2())
+        elif com_typ == "C_LABEL":
+            code_writer.write_label(parser.arg1())
+        elif com_typ == "C_GOTO":
+            code_writer.write_goto(parser.arg1())
+        elif com_typ == "C_IF":
+            code_writer.write_if(parser.arg1())
+        elif com_typ == "C_FUNCTION":
+            code_writer.write_function(parser.arg1(), parser.arg2())
         parser.advance()
     code_writer.output_stream.write(code_writer.END_LOOP)
 

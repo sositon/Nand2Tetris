@@ -26,12 +26,12 @@ class Parser:
         input_lines = input_file.read().splitlines()
         new_lines = list()
         for line in input_lines:
+            line = line.strip(" ")
             line = line.replace("\t", "")
-            line = line.split(" ")
-            if "//" in line[0]:
-                continue
+            line = line.split("//")
             if not line[0]:
                 continue
+            line = line[0].split(" ")
             new_line = list()
             for arg in line:
                 if arg and "//" not in arg:
@@ -74,13 +74,13 @@ class Parser:
         # Your code goes here!
         command_length = len(self.cur_command)
         command = self.cur_command[0]
+        # logics could change
         if command_length == 1:
-            return "C_ARITHMETIC"
-        if command_length == 3:
-            if command == "pop":
-                return "C_POP"
-            if command == "push":
-                return "C_PUSH"
+            return "C_ARITHMETIC" if command != "return" else "C_RETURN"
+        command_dic = {"pop": "C_POP", "push": "C_PUSH", "label": "C_LABEL",
+                       "if-goto": "C_IF", "goto": "C_GOTO",
+                       "function": "C_FUNCTION", "call": "C_CALL"}
+        return command_dic[command]
 
     def arg1(self) -> str:
         """

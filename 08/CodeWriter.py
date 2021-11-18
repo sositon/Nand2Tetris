@@ -43,6 +43,11 @@ class CodeWriter:
         # Your code goes here!
         self.file_name = filename
 
+    def close(self) -> None:
+        """Closes the output file."""
+        # Your code goes here!
+        self.output_stream.close()
+
     def write_arithmetic(self, command: str) -> None:
         """Writes the assembly code that is the translation of the given 
         arithmetic command.
@@ -93,10 +98,23 @@ class CodeWriter:
                              "static": self.pop_static}
             self.output_stream.write(pop_functions[segment](segment, index))
 
-    def close(self) -> None:
-        """Closes the output file."""
-        # Your code goes here!
-        self.output_stream.close()
+    def write_label(self, label: str) -> None:
+        self.output_stream.write(f"({label})\n")
+
+    def write_goto(self, label: str) -> None:
+        self.output_stream.write(f"//goto {label}\n@{label}\n0;JMP\n")
+
+    def write_if(self, label: str) -> None:
+        self.output_stream.write(f"//if-goto {label}\n@SP\nAM=M-1\nD=M\n"
+                                 f"@{label}\nD;JNE\n")
+
+    def write_function(self, function_name: str, n_vars: int) -> None:
+        self.output_stream.write(f"// function {function_name} {n_vars}\n")
+        self.write_label(function_name)
+        [self.write_push_pop("C_PUSH", "constant", 0) for _ in range(n_vars)]
+
+    def write_call(self, function_name: str, n_args: int) -> None:
+        pass
 
     # arithmetic implementations
     @staticmethod

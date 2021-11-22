@@ -26,6 +26,8 @@ def translate_file(
     parser = Parser(input_file)
     code_writer = CodeWriter(output_file)
     code_writer.set_file_name(input_filename)
+    code_writer.output_stream.write(CodeWriter.SYS_INIT)
+    code_writer.write_call("Sys.init", 0)
     while parser.has_more_commands():
         com_typ = parser.command_type()
         if com_typ == "C_ARITHMETIC":
@@ -40,6 +42,10 @@ def translate_file(
             code_writer.write_if(parser.arg1())
         elif com_typ == "C_FUNCTION":
             code_writer.write_function(parser.arg1(), parser.arg2())
+        elif com_typ == "C_CALL":
+            code_writer.write_call(parser.arg1(), parser.arg2())
+        elif com_typ == "C_RETURN":
+            code_writer.write_return()
         parser.advance()
     code_writer.output_stream.write(code_writer.END_LOOP)
 

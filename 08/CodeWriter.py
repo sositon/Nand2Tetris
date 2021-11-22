@@ -19,6 +19,10 @@ class CodeWriter:
              "AM=M-1\n" \
              "D=M\n" \
              "M=0\n"
+    SYS_INIT = "@256\n" \
+               "D=A\n" \
+               "@SP\n" \
+               "M=D\n"
     END_LOOP = "(END)\n" \
                "@END\n" \
                "0;JMP\n"
@@ -32,6 +36,7 @@ class CodeWriter:
         self.output_stream = output_stream
         self.file_name = ""
         self.label_counter = 0
+        self.func_counter = 0
 
     def set_file_name(self, filename: str) -> None:
         """Informs the code writer that the translation of a new VM file is 
@@ -114,7 +119,47 @@ class CodeWriter:
         [self.write_push_pop("C_PUSH", "constant", 0) for _ in range(n_vars)]
 
     def write_call(self, function_name: str, n_args: int) -> None:
-        pass
+        self.output_stream.write(f"// call {function_name} {n_args}\n")
+        # push return address
+        self.output_stream.write(f"@return_function.{self.func_counter}\n"
+                                 f"D=M\n" + CodeWriter.push_SP)
+        # push LCL ARG THIS THAT
+        self.output_stream.write(f"@LCL\nD=M\n" + CodeWriter.push_SP)
+        self.output_stream.write(f"@ARG\nD=M\n" + CodeWriter.push_SP)
+        self.output_stream.write(f"@THIS\nD=M\n" + CodeWriter.push_SP)
+        self.output_stream.write(f"@THAT\nD=M\n" + CodeWriter.push_SP)
+        # ARG = SP - 5 - n_args
+        self.output_stream.write(f"@SP\nD=M\n@5\nD=D-A\n@{n_args}\n"
+                                 f"D=D-A\n@ARG\nM=D\n")
+        # SP = LCL
+        self.output_stream.write(f"@SP\nD=M\n@LCL\nM=D\n")
+        self.write_goto(function_name)
+        self.write_label(f"return_function.{self.func_counter}")
+        self.func_counter += 1
+
+    def write_return(self) -> None:
+        self.output_stream.write(f"// return\n")
+        # end_frame = LCL // R13
+        self.output_stream.write(f"@LCL\nD=M\n@R13\nM=D\n")
+        # ret_addr = *(end_frame - 5) // R14
+        self.output_stream.write(f"@5\nD=D-A\nA=D\nD=M\n@R14\nM=D\n")
+        # *ARG = pop()
+        self.output_stream.write(CodeWriter.pop_SP + f"@ARG\nA=M\nM=D\n")
+        # SP = ARG + 1
+        self.output_stream.write("@ARG\nD=M+1\n@SP\nM=D\n")
+        # THAT = *(end_frame - 1)
+        self.output_stream.write("@R13\nD=M\n@1\nD=D-A\nA=D\nD=M\n@THAT\nM=D\n")
+        # THIS = *(end_frame - 2)
+        self.output_stream.write("@R13\nD=M\n@2\nD=D-A\nA=D\nD=M\n@THIS\nM=D\n")
+        # ARG = *(end_frame - 3)
+        self.output_stream.write("@R13\nD=M\n@3\nD=D-A\nA=D\nD=M\n@ARG\nM=D\n")
+        # LCL = *(end_frame - 4)
+        self.output_stream.write("@R13\nD=M\n@4\nD=D-A\nA=D\nD=M\n@LCL\nM=D\n")
+        # goto ret_addr
+        self.output_stream.write("@14\nA=M\n0;JMP\n")
+
+
+
 
     # arithmetic implementations
     @staticmethod

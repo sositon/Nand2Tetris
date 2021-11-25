@@ -12,22 +12,19 @@ from CodeWriter import CodeWriter
 
 
 def translate_file(
-        input_file: typing.TextIO, output_file: typing.TextIO) -> None:
+        input_file: typing.TextIO, code_writer: CodeWriter) -> None:
     """Translates a single file.
 
     Args:
         input_file (typing.TextIO): the file to translate.
-        output_file (typing.TextIO): writes all output to this file.
+        code_writer (CodeWriter): writes all output to the output file.
     """
     # Your code goes here!
     # Note: you can get the input file's name using:
     input_filename, input_extension = os.path.splitext(
         os.path.basename(input_file.name))
     parser = Parser(input_file)
-    code_writer = CodeWriter(output_file)
     code_writer.set_file_name(input_filename)
-    code_writer.output_stream.write(CodeWriter.SYS_INIT)
-    code_writer.write_call("Sys.init", 0)
     while parser.has_more_commands():
         com_typ = parser.command_type()
         if com_typ == "C_ARITHMETIC":
@@ -47,7 +44,6 @@ def translate_file(
         elif com_typ == "C_RETURN":
             code_writer.write_return()
         parser.advance()
-    code_writer.output_stream.write(code_writer.END_LOOP)
 
 
 if "__main__" == __name__:
@@ -66,9 +62,10 @@ if "__main__" == __name__:
         output_path, extension = os.path.splitext(argument_path)
     output_path += ".asm"
     with open(output_path, 'w') as output_file:
+        code_writer = CodeWriter(output_file)
         for input_path in files_to_translate:
             filename, extension = os.path.splitext(input_path)
             if extension.lower() != ".vm":
                 continue
             with open(input_path, 'r') as input_file:
-                translate_file(input_file, output_file)
+                translate_file(input_file, code_writer)

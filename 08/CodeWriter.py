@@ -23,9 +23,6 @@ class CodeWriter:
                "D=A\n" \
                "@SP\n" \
                "M=D\n"
-    END_LOOP = "(END)\n" \
-               "@END\n" \
-               "0;JMP\n"
 
     def __init__(self, output_stream: typing.TextIO) -> None:
         """Initializes the CodeWriter.
@@ -37,6 +34,9 @@ class CodeWriter:
         self.file_name = ""
         self.label_counter = 0
         self.func_counter = 0
+        # Bootstrap
+        self.output_stream.write(CodeWriter.SYS_INIT)
+        self.write_call("Sys.init", 0)
 
     def set_file_name(self, filename: str) -> None:
         """Informs the code writer that the translation of a new VM file is 
@@ -110,7 +110,7 @@ class CodeWriter:
         self.output_stream.write(f"//goto {label}\n@{label}\n0;JMP\n")
 
     def write_if(self, label: str) -> None:
-        self.output_stream.write(f"//if-goto {label}\n@SP\nAM=M-1\nD=M\n"
+        self.output_stream.write(f"//if-goto {label}\n@SP\nAM=M-1\nD=M\nM=0\n"
                                  f"@{label}\nD;JNE\n")
 
     def write_function(self, function_name: str, n_vars: int) -> None:
@@ -121,8 +121,8 @@ class CodeWriter:
     def write_call(self, function_name: str, n_args: int) -> None:
         self.output_stream.write(f"// call {function_name} {n_args}\n")
         # push return address
-        self.output_stream.write(f"@return_function.{self.func_counter}\n"
-                                 f"D=M\n" + CodeWriter.push_SP)
+        self.output_stream.write(f"@{self.file_name}$ret.{self.func_counter}\n"
+                                 f"D=A\n" + CodeWriter.push_SP)
         # push LCL ARG THIS THAT
         self.output_stream.write(f"@LCL\nD=M\n" + CodeWriter.push_SP)
         self.output_stream.write(f"@ARG\nD=M\n" + CodeWriter.push_SP)
@@ -131,10 +131,10 @@ class CodeWriter:
         # ARG = SP - 5 - n_args
         self.output_stream.write(f"@SP\nD=M\n@5\nD=D-A\n@{n_args}\n"
                                  f"D=D-A\n@ARG\nM=D\n")
-        # SP = LCL
+        # LCL = SP
         self.output_stream.write(f"@SP\nD=M\n@LCL\nM=D\n")
         self.write_goto(function_name)
-        self.write_label(f"return_function.{self.func_counter}")
+        self.write_label(f"{self.file_name}$ret.{self.func_counter}")
         self.func_counter += 1
 
     def write_return(self) -> None:
@@ -157,9 +157,6 @@ class CodeWriter:
         self.output_stream.write("@R13\nD=M\n@4\nD=D-A\nA=D\nD=M\n@LCL\nM=D\n")
         # goto ret_addr
         self.output_stream.write("@14\nA=M\n0;JMP\n")
-
-
-
 
     # arithmetic implementations
     @staticmethod

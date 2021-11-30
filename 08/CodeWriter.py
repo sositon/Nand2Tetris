@@ -30,8 +30,10 @@ class CodeWriter:
         Args:
             output_stream (typing.TextIO): output stream.
         """
+
         self.output_stream = output_stream
         self.file_name = ""
+        self.cur_function_name = ""
         self.label_counter = 0
         self.func_counter = 0
         # Bootstrap
@@ -104,18 +106,21 @@ class CodeWriter:
             self.output_stream.write(pop_functions[segment](segment, index))
 
     def write_label(self, label: str) -> None:
-        self.output_stream.write(f"({label})\n")
+        self.output_stream.write(f"({self.cur_function_name}.{label})\n")
 
     def write_goto(self, label: str) -> None:
-        self.output_stream.write(f"//goto {label}\n@{label}\n0;JMP\n")
+        self.output_stream.write(f"//goto {label}\n"
+                                 f"@{self.cur_function_name}.{label}\n0;JMP\n")
 
     def write_if(self, label: str) -> None:
-        self.output_stream.write(f"//if-goto {label}\n@SP\nAM=M-1\nD=M\nM=0\n"
-                                 f"@{label}\nD;JNE\n")
+        self.output_stream.write(f"//if-goto {label}\n"
+                                 f"@SP\nAM=M-1\nD=M\nM=0\n"
+                                 f"@{self.cur_function_name}.{label}\nD;JNE\n")
 
     def write_function(self, function_name: str, n_vars: int) -> None:
+        self.cur_function_name = function_name
         self.output_stream.write(f"// function {function_name} {n_vars}\n")
-        self.write_label(function_name)
+        self.output_stream.write(f"({function_name})\n")
         [self.write_push_pop("C_PUSH", "constant", 0) for _ in range(n_vars)]
 
     def write_call(self, function_name: str, n_args: int) -> None:
@@ -133,8 +138,8 @@ class CodeWriter:
                                  f"D=D-A\n@ARG\nM=D\n")
         # LCL = SP
         self.output_stream.write(f"@SP\nD=M\n@LCL\nM=D\n")
-        self.write_goto(function_name)
-        self.write_label(f"{self.file_name}$ret.{self.func_counter}")
+        self.output_stream.write(f"@{function_name}\n0;JMP\n")
+        self.output_stream.write(f"({self.file_name}$ret.{self.func_counter})\n")
         self.func_counter += 1
 
     def write_return(self) -> None:

@@ -87,6 +87,13 @@ class JackTokenizer:
     use the built-in JackCompiler to compiler it. If the compilation fails, it
     is invalid. Otherwise, it is valid.
     """
+    KEY_WORDS = ["class", "constructor", "function", "method", "field",
+                 "static", "var", "int", "char", "boolean", "void", "true",
+                 "false", "null", "this", "let", "do", "if", "else",
+                 "while", "return"]
+    SYMBOLS = ["{", "}", "(", ")", "[", "]", ".", ",", ";", "+", "-", "*",
+               "/", "&", "|", "<", ">", "=", "~"]
+    SPECIAL_SYMBOLS = {"<": "&lt;", ">": "&gt;", "&": "&amp;"}
 
     def __init__(self, input_stream: typing.TextIO) -> None:
         """Opens the input stream and gets ready to tokenize it.
@@ -97,32 +104,70 @@ class JackTokenizer:
         # Your code goes here!
         # A good place to start is:
         input_lines = input_stream.read().splitlines()
-        new_lines = list()
+        tokens = list()
+        str_const_flag = False
+        str_const = ""
+        idx_3 = -1
         for line in input_lines:
+            """pre process"""
             line = line.strip()
             line = line.replace("\t", "")
-            line = line.split("//")
-            if not line[0]:
+            line = line.replace("    ", "")
+            """comments handling"""
+            if line.startswith("//"):
                 continue
-            line = line[0].split("/**")
-            if not line[0]:
-                line = line[1].split("*/")
-                line = [line[1].strip()]
-            line = line[0].split("*")
-            if not line[0]:
-                continue
-            line = line[0].split(" ")
-            new_line = list()
-            for arg in line:
-                if arg and "//" not in arg:
-                    new_line.append(arg)
-            new_lines.append(new_line)
-        temp = []
-        [temp.extend(line) for line in new_lines]
-        self.tokens = temp
+            if line.startswith(("/*", "/**")):
+                idx_1 = line.find("*/")
+                line = line[idx_1 + len("*/"):]
+            if line.find("//") != -1:
+                line = line[:line.find("//")]
+            """string constant"""
+            if line.find('"') != -1:
+                str_const_flag = True
+                idx_2 = line.find('"')
+                idx_3 = line.find('"', idx_2 + 1)
+                str_const = line[idx_2 + 1:idx_3]
+                line_part_2 = line[idx_3+1:]
+                line = line[:idx_2]
+            """ init variables"""
+            temp_tok = ""
+            for letter in line:
+                if letter == " ":
+                    if temp_tok:
+                        tokens.append(temp_tok)
+                        temp_tok = ""
+                    continue
+                if letter in self.SYMBOLS:
+                    if temp_tok:
+                        tokens.append(temp_tok)
+                        temp_tok = ""
+                    tokens.append(letter)
+                    continue
+                else:
+                    temp_tok += letter
+            """string constant"""
+            if str_const_flag:
+                tokens.append(str_const)
+                str_const_flag = False
+                for letter in line_part_2:
+                    if letter == " ":
+                        if temp_tok:
+                            tokens.append(temp_tok)
+                            temp_tok = ""
+                        continue
+                    if letter in self.SYMBOLS:
+                        if temp_tok:
+                            tokens.append(temp_tok)
+                            temp_tok = ""
+                        tokens.append(letter)
+                        continue
+                    else:
+                        temp_tok += letter
+
+        self.tokens = tokens
         self.cur_token = ""
-        self.token_count = 0
-        self.last_token = len(temp)
+        self.token_count = -1
+        self.last_token = len(tokens)
 
     def has_more_tokens(self) -> bool:
         """Do we have more tokens in the input?
@@ -131,7 +176,7 @@ class JackTokenizer:
             bool: True if there are more tokens, False otherwise.
         """
         # Your code goes here!
-        return self.token_count <= self.last_token
+        return self.token_count < self.last_token
 
     def advance(self) -> None:
         """Gets the next token from the input and makes it the current token. 
@@ -150,7 +195,16 @@ class JackTokenizer:
             "KEYWORD", "SYMBOL", "IDENTIFIER", "INT_CONST", "STRING_CONST"
         """
         # Your code goes here!
-        pass
+        token = self.cur_token
+        if token in self.KEY_WORDS:
+            return "KEYWORD"
+        elif token in self.SYMBOLS:
+            return "SYMBOL"
+        elif token.isidentifier():
+            return "IDENTIFIER"
+        elif token.isdigit() and 0 <= int(token) <= 32767:
+            return "INT_CONST"
+        return "STRING_CONST"
 
     def keyword(self) -> str:
         """
@@ -162,7 +216,7 @@ class JackTokenizer:
             "IF", "ELSE", "WHILE", "RETURN", "TRUE", "FALSE", "NULL", "THIS"
         """
         # Your code goes here!
-        pass
+        return self.cur_token
 
     def symbol(self) -> str:
         """
@@ -171,7 +225,9 @@ class JackTokenizer:
             Should be called only when token_type() is "SYMBOL".
         """
         # Your code goes here!
-        pass
+        if self.cur_token in self.SPECIAL_SYMBOLS:
+            return self.SPECIAL_SYMBOLS[self.cur_token]
+        return self.cur_token
 
     def identifier(self) -> str:
         """
@@ -180,7 +236,7 @@ class JackTokenizer:
             Should be called only when token_type() is "IDENTIFIER".
         """
         # Your code goes here!
-        pass
+        return self.cur_token
 
     def int_val(self) -> int:
         """
@@ -189,7 +245,7 @@ class JackTokenizer:
             Should be called only when token_type() is "INT_CONST".
         """
         # Your code goes here!
-        pass
+        return int(self.cur_token)
 
     def string_val(self) -> str:
         """
@@ -198,4 +254,4 @@ class JackTokenizer:
             quotes. Should be called only when token_type() is "STRING_CONST".
         """
         # Your code goes here!
-        pass
+        return self.cur_token

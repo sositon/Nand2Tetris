@@ -123,27 +123,31 @@ def analyze_file(
       > 
       > Compiling "C:\...\projects\09\Reflect"
     """
-    # Your code goes here!
     tokenizer = JackTokenizer(input_file)
-    compilation_engine = CompilationEngine(tokenizer, output_file)
-    # output_file.write("<tokens>\n")
-    # tokenizer.advance()
-    # while tokenizer.has_more_tokens():
-    #     if tokenizer.token_type() == "KEYWORD":
-    #         output_file.write(f"<keyword> {tokenizer.keyword()} </keyword>\n")
-    #     if tokenizer.token_type() == "SYMBOL":
-    #         output_file.write(f"<symbol> {tokenizer.symbol()} </symbol>\n")
-    #     if tokenizer.token_type() == "IDENTIFIER":
-    #         output_file.write(f"<identifier> {tokenizer.identifier()} "
-    #                           f"</identifier>\n")
-    #     if tokenizer.token_type() == "INT_CONST":
-    #         output_file.write(f"<integerConstant> "
-    #                           f"{tokenizer.int_val()} </integerConstant>\n")
-    #     if tokenizer.token_type() == "STRING_CONST":
-    #         output_file.write(f"<stringConstant> "
-    #                           f"{tokenizer.string_val()} </stringConstant>\n")
-    #     tokenizer.advance()
-    # output_file.write("</tokens>\n")
+    CompilationEngine(tokenizer, output_file)
+
+    # analyze_file_to_tokens(output_file, tokenizer)
+
+
+def analyze_file_to_tokens(output_file, tokenizer):
+    output_file.write("<tokens>\n")
+    tokenizer.advance()
+    while tokenizer.has_more_tokens():
+        if tokenizer.token_type() == "KEYWORD":
+            output_file.write(f"<keyword> {tokenizer.keyword()} </keyword>\n")
+        if tokenizer.token_type() == "SYMBOL":
+            output_file.write(f"<symbol> {tokenizer.symbol()} </symbol>\n")
+        if tokenizer.token_type() == "IDENTIFIER":
+            output_file.write(f"<identifier> {tokenizer.identifier()} "
+                              f"</identifier>\n")
+        if tokenizer.token_type() == "INT_CONST":
+            output_file.write(f"<integerConstant> "
+                              f"{tokenizer.int_val()} </integerConstant>\n")
+        if tokenizer.token_type() == "STRING_CONST":
+            output_file.write(f"<stringConstant> "
+                              f"{tokenizer.string_val()} </stringConstant>\n")
+        tokenizer.advance()
+    output_file.write("</tokens>\n")
 
 
 if "__main__" == __name__:
@@ -165,6 +169,3 @@ if "__main__" == __name__:
         with open(input_path, 'r') as input_file, \
                 open(output_path, 'w') as output_file:
             analyze_file(input_file, output_file)
-        # with open(input_path, 'r') as input_file, \
-        #         open(output_path, 'w') as output_file:
-        #     analyze_file(input_file, output_file)

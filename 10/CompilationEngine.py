@@ -6,7 +6,6 @@ Unported License (https://creativecommons.org/licenses/by-nc-sa/3.0/).
 """
 import typing
 from JackTokenizer import *
-import xml.etree.ElementTree as ET
 
 OPEN_BRACKETS = "["
 
@@ -21,7 +20,10 @@ DOT = "."
 OPEN_PARENTHESIS = "("
 CLOSE_PARENTHESIS = ")"
 
-OP = ['+', '-', '*', '/', '&', ',', '<', '>', '=']
+HEADERS_DIC = {"KEYWORD": "keyword", "SYMBOL": "symbol",
+               "IDENTIFIER": "identifier", "INT_CONST": "integerConstant",
+               "STRING_CONST": "stringConstant"}
+OP = ['+', '-', '*', '/', '&', '|', '<', '>', '=']
 UNARY_OP = ['-', '~', '^', '#']
 KEYWORD_CONST = ['true', 'false', 'null', 'this']
 
@@ -221,6 +223,9 @@ class CompilationEngine:
         # Your code goes here!
         self.print_open_header("expression")
         self.compile_term()
+        while self.tokenizer.cur_token in OP:
+            self.print_token()
+            self.compile_term()
         self.print_close_header("expression")
 
     def compile_term(self) -> None:
@@ -248,6 +253,19 @@ class CompilationEngine:
             self.print_token()
         if self.tokenizer.token_type() == IDENTIFIER:
             self.print_token()
+            if self.tokenizer.cur_token == OPEN_BRACKETS:
+                self.print_token()
+                self.compile_expression()
+                self.print_token()
+            elif self.tokenizer.cur_token == OPEN_PARENTHESIS:
+                self.print_token()
+                self.compile_expression_list()
+                self.print_token()
+            elif self.tokenizer.cur_token == DOT:
+                for _ in range(3):
+                    self.print_token()
+                self.compile_expression_list()
+                self.print_token()
         self.print_close_header("term")
 
     def compile_expression_list(self) -> None:
@@ -273,8 +291,12 @@ class CompilationEngine:
         self.output_stream.write(f"</{header}>\n")
 
     def print_token(self):
+        token = self.tokenizer.cur_token if \
+            self.tokenizer.cur_token not in \
+            self.tokenizer.SPECIAL_SYMBOLS else \
+            self.tokenizer.SPECIAL_SYMBOLS[self.tokenizer.cur_token]
+        header = HEADERS_DIC[self.tokenizer.token_type()]
+
         self.output_stream.write(self.indent * self.indent_counter)
-        self.output_stream.write(f"<{self.tokenizer.token_type().lower()}> "
-                                 f"{self.tokenizer.cur_token} "
-                                 f"</{self.tokenizer.token_type().lower()}>\n")
+        self.output_stream.write(f"<{header}> {token} </{header}>\n")
         self.tokenizer.advance()

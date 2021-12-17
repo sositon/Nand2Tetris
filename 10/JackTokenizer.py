@@ -8,6 +8,23 @@ import typing
 import re
 
 
+def remove_comments(string):
+    pattern = r"(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)"
+    # first group captures quoted strings (double or single)
+    # second group captures comments (//single-line or /* multi-line */)
+    regex = re.compile(pattern, re.MULTILINE | re.DOTALL)
+
+    def _replacer(match):
+        # if the 2nd group (capturing comments) is not None,
+        # it means we have captured a non-quoted (real) comment string.
+        if match.group(2) is not None:
+            return ""  # so we will return empty to remove the comment
+        else:  # otherwise, we will return the 1st group
+            return match.group(1)  # captured quoted-string
+
+    return regex.sub(_replacer, string)
+
+
 class JackTokenizer:
     """Removes all comments from the input stream and breaks it
     into Jack language tokens, as specified by the Jack grammar.
@@ -101,73 +118,59 @@ class JackTokenizer:
         Args:
             input_stream (typing.TextIO): input stream.
         """
-        # Your code goes here!
-        # A good place to start is:
-        input_lines = input_stream.read().splitlines()
+        input_file = input_stream.read()
+        """comments handling"""
+        input_file = remove_comments(input_file)
+        input_lines = input_file.splitlines()
+        """ init variables"""
         tokens = list()
         str_const_flag = False
         str_const = ""
-        idx_3 = -1
+        line_part_2 = ""
         for line in input_lines:
             """pre process"""
             line = line.strip()
             line = line.replace("\t", "")
             line = line.replace("    ", "")
-            """comments handling"""
-            if line.startswith("//"):
-                continue
-            if line.startswith(("/*", "/**")):
-                idx_1 = line.find("*/")
-                line = line[idx_1 + len("*/"):]
-            if line.find("//") != -1:
-                line = line[:line.find("//")]
             """string constant"""
             if line.find('"') != -1:
                 str_const_flag = True
                 idx_2 = line.find('"')
                 idx_3 = line.find('"', idx_2 + 1)
                 str_const = line[idx_2 + 1:idx_3]
-                line_part_2 = line[idx_3+1:]
+                line_part_2 = line[idx_3 + 1:]
                 line = line[:idx_2]
-            """ init variables"""
-            temp_tok = ""
-            for letter in line:
-                if letter == " ":
-                    if temp_tok:
-                        tokens.append(temp_tok)
-                        temp_tok = ""
-                    continue
-                if letter in self.SYMBOLS:
-                    if temp_tok:
-                        tokens.append(temp_tok)
-                        temp_tok = ""
-                    tokens.append(letter)
-                    continue
-                else:
-                    temp_tok += letter
+            self.line_to_tokens(line, tokens)
             """string constant"""
             if str_const_flag:
                 tokens.append(str_const)
                 str_const_flag = False
-                for letter in line_part_2:
-                    if letter == " ":
-                        if temp_tok:
-                            tokens.append(temp_tok)
-                            temp_tok = ""
-                        continue
-                    if letter in self.SYMBOLS:
-                        if temp_tok:
-                            tokens.append(temp_tok)
-                            temp_tok = ""
-                        tokens.append(letter)
-                        continue
-                    else:
-                        temp_tok += letter
+                self.line_to_tokens(line_part_2, tokens)
 
         self.tokens = tokens
         self.cur_token = ""
         self.token_count = -1
         self.last_token = len(tokens)
+
+    def line_to_tokens(self, line: str, tokens: [str]) -> None:
+        """
+        gets a line and add the all the tokens in line to the tokens array
+        """
+        temp_tok = ""
+        for letter in line:
+            if letter == " ":
+                if temp_tok:
+                    tokens.append(temp_tok)
+                    temp_tok = ""
+                continue
+            if letter in self.SYMBOLS:
+                if temp_tok:
+                    tokens.append(temp_tok)
+                    temp_tok = ""
+                tokens.append(letter)
+                continue
+            else:
+                temp_tok += letter
 
     def has_more_tokens(self) -> bool:
         """Do we have more tokens in the input?

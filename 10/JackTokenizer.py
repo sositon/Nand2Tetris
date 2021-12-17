@@ -137,7 +137,7 @@ class JackTokenizer:
                 str_const_flag = True
                 idx_2 = line.find('"')
                 idx_3 = line.find('"', idx_2 + 1)
-                str_const = line[idx_2 + 1:idx_3]
+                str_const = line[idx_2:idx_3]
                 line_part_2 = line[idx_3 + 1:]
                 line = line[:idx_2]
             self.line_to_tokens(line, tokens)
@@ -171,6 +171,8 @@ class JackTokenizer:
                 continue
             else:
                 temp_tok += letter
+        if temp_tok:
+            tokens.append(temp_tok)
 
     def has_more_tokens(self) -> bool:
         """Do we have more tokens in the input?
@@ -203,11 +205,12 @@ class JackTokenizer:
             return "KEYWORD"
         elif token in self.SYMBOLS:
             return "SYMBOL"
-        elif token.isidentifier():
-            return "IDENTIFIER"
+        elif token.startswith('"'):
+            return "STRING_CONST"
         elif token.isdigit() and 0 <= int(token) <= 32767:
             return "INT_CONST"
-        return "STRING_CONST"
+        elif token.isidentifier():
+            return "IDENTIFIER"
 
     def keyword(self) -> str:
         """
@@ -257,4 +260,4 @@ class JackTokenizer:
             quotes. Should be called only when token_type() is "STRING_CONST".
         """
         # Your code goes here!
-        return self.cur_token
+        return self.cur_token[1:]

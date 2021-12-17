@@ -242,16 +242,16 @@ class CompilationEngine:
         self.print_open_header("term")
         if self.tokenizer.token_type() in [INT_CONST, STRING_CONST]:
             self.print_token()
-        if self.tokenizer.cur_token in KEYWORD_CONST:
+        elif self.tokenizer.cur_token in KEYWORD_CONST:
             self.print_token()
-        if self.tokenizer.cur_token in UNARY_OP:
+        elif self.tokenizer.cur_token in UNARY_OP:
             self.print_token()
             self.compile_term()
-        if self.tokenizer.cur_token == OPEN_PARENTHESIS:
+        elif self.tokenizer.cur_token == OPEN_PARENTHESIS:
             self.print_token()
             self.compile_expression()
             self.print_token()
-        if self.tokenizer.token_type() == IDENTIFIER:
+        elif self.tokenizer.token_type() == IDENTIFIER:
             self.print_token()
             if self.tokenizer.cur_token == OPEN_BRACKETS:
                 self.print_token()
@@ -277,7 +277,6 @@ class CompilationEngine:
             while self.tokenizer.cur_token == COMMA:
                 self.print_token()
                 self.compile_expression()
-
         self.print_close_header("expressionList")
 
     def print_open_header(self, header):
@@ -291,10 +290,11 @@ class CompilationEngine:
         self.output_stream.write(f"</{header}>\n")
 
     def print_token(self):
-        token = self.tokenizer.cur_token if \
-            self.tokenizer.cur_token not in \
-            self.tokenizer.SPECIAL_SYMBOLS else \
-            self.tokenizer.SPECIAL_SYMBOLS[self.tokenizer.cur_token]
+        token = self.tokenizer.cur_token
+        if self.tokenizer.token_type() == STRING_CONST:
+            token = self.tokenizer.string_val()
+        elif token in self.tokenizer.SPECIAL_SYMBOLS:
+            token = self.tokenizer.SPECIAL_SYMBOLS[token]
         header = HEADERS_DIC[self.tokenizer.token_type()]
 
         self.output_stream.write(self.indent * self.indent_counter)

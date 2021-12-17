@@ -125,7 +125,6 @@ def analyze_file(
     """
     tokenizer = JackTokenizer(input_file)
     CompilationEngine(tokenizer, output_file)
-
     # analyze_file_to_tokens(output_file, tokenizer)
 
 

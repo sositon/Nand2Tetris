@@ -5,6 +5,25 @@ and as allowed by the Creative Common Attribution-NonCommercial-ShareAlike 3.0
 Unported License (https://creativecommons.org/licenses/by-nc-sa/3.0/).
 """
 import typing
+from JackTokenizer import *
+import xml.etree.ElementTree as ET
+
+OPEN_BRACKETS = "["
+
+INT_CONST = "INT_CONST"
+STRING_CONST = "STRING_CONST"
+IDENTIFIER = "IDENTIFIER"
+
+COMMA = ","
+DOUBLE_SPACE = "  "
+SEMICOLON = ";"
+DOT = "."
+OPEN_PARENTHESIS = "("
+CLOSE_PARENTHESIS = ")"
+
+OP = ['+', '-', '*', '/', '&', ',', '<', '>', '=']
+UNARY_OP = ['-', '~', '^', '#']
+KEYWORD_CONST = ['true', 'false', 'null', 'this']
 
 
 class CompilationEngine:
@@ -12,8 +31,8 @@ class CompilationEngine:
     output stream.
     """
 
-    def __init__(self, input_stream: typing.TextIO,
-                output_stream: typing.TextIO) -> None:
+    def __init__(self, input_stream: JackTokenizer, output_stream: typing.IO) \
+            -> None:
         """
         Creates a new compilation engine with the given input and output. The
         next routine called must be compileClass()
@@ -21,71 +40,188 @@ class CompilationEngine:
         :param output_stream: The output stream.
         """
         # Your code goes here!
-        pass
+        self.tokenizer = input_stream
+        self.tokenizer.advance()
+        self.output_stream = output_stream
+        self.indent_counter = 0
+        self.indent = DOUBLE_SPACE
+        self.compile_class()
 
     def compile_class(self) -> None:
         """Compiles a complete class."""
         # Your code goes here!
-        pass
+        self.print_open_header("class")
+        for _ in range(3):
+            self.print_token()
+        if self.tokenizer.cur_token in ["field", "static"]:
+            self.compile_class_var_dec()
+        if self.tokenizer.cur_token in ['constructor', 'function', 'method']:
+            self.compile_subroutine()
+        self.print_token()
+        self.print_close_header("class")
 
     def compile_class_var_dec(self) -> None:
         """Compiles a static declaration or a field declaration."""
         # Your code goes here!
-        pass
+        while self.tokenizer.cur_token in ["field", "static"]:
+            self.print_open_header("classVarDec")
+            for _ in range(3):
+                self.print_token()
+            while self.tokenizer.cur_token == COMMA:
+                for _ in range(2):
+                    self.print_token()
+            self.print_token()
+            self.print_close_header("classVarDec")
 
     def compile_subroutine(self) -> None:
-        """Compiles a complete method, function, or constructor."""
-        # Your code goes here!
-        pass
+        """
+        Compiles a complete method, function, or constructor.
+        You can assume that classes with constructors have at least one field,
+        you will understand why this is necessary in project 11.
+        """
+        # subroutineDec
+        while self.tokenizer.cur_token in ['constructor', 'function',
+                                           'method']:
+            self.print_open_header("subroutineDec")
+            for _ in range(4):
+                self.print_token()
+            self.compile_parameter_list()
+            self.print_token()
+            # subroutineBody
+            self.print_open_header("subroutineBody")
+            self.print_token()
+            if self.tokenizer.cur_token == "var":
+                self.compile_var_dec()
+            self.compile_statements()
+            self.print_token()
+            self.print_close_header("subroutineBody")
+            self.print_close_header("subroutineDec")
 
     def compile_parameter_list(self) -> None:
         """Compiles a (possibly empty) parameter list, not including the 
         enclosing "()".
         """
         # Your code goes here!
-        pass
+        self.print_open_header("parameterList")
+        if self.tokenizer.cur_token in ["int", "char", "boolean"] or \
+                self.tokenizer.token_type() == IDENTIFIER:
+            for _ in range(2):
+                self.print_token()
+            while self.tokenizer.cur_token == COMMA:
+                for _ in range(3):
+                    self.print_token()
+        self.print_close_header("parameterList")
 
     def compile_var_dec(self) -> None:
         """Compiles a var declaration."""
         # Your code goes here!
-        pass
+        while self.tokenizer.cur_token == "var":
+            self.print_open_header("varDec")
+            for _ in range(3):
+                self.print_token()
+            while self.tokenizer.cur_token == COMMA:
+                for _ in range(2):
+                    self.print_token()
+            self.print_token()
+            self.print_close_header("varDec")
 
     def compile_statements(self) -> None:
         """Compiles a sequence of statements, not including the enclosing 
         "{}".
         """
         # Your code goes here!
-        pass
+        self.print_open_header("statements")
+        statements_dic = {"let": self.compile_let,
+                          "if": self.compile_if,
+                          "while": self.compile_while,
+                          "do": self.compile_do,
+                          "return": self.compile_return}
+        while self.tokenizer.cur_token in statements_dic:
+            statements_dic[self.tokenizer.cur_token]()
+        self.print_close_header("statements")
 
     def compile_do(self) -> None:
         """Compiles a do statement."""
         # Your code goes here!
-        pass
+        self.print_open_header("doStatement")
+        for _ in range(2):
+            self.print_token()
+        if self.tokenizer.cur_token == OPEN_PARENTHESIS:
+            self.print_token()
+            self.compile_expression_list()
+            self.print_token()
+        elif self.tokenizer.cur_token == DOT:
+            for _ in range(3):
+                self.print_token()
+            self.compile_expression_list()
+            self.print_token()
+        self.print_token()
+        self.print_close_header("doStatement")
 
     def compile_let(self) -> None:
         """Compiles a let statement."""
         # Your code goes here!
-        pass
+        self.print_open_header("letStatement")
+        for _ in range(2):
+            self.print_token()
+        if self.tokenizer.cur_token == OPEN_BRACKETS:
+            self.print_token()
+            self.compile_expression()
+            self.print_token()
+        self.print_token()
+        self.compile_expression()
+        self.print_token()
+        self.print_close_header("letStatement")
 
     def compile_while(self) -> None:
         """Compiles a while statement."""
         # Your code goes here!
-        pass
+        self.print_open_header("whileStatement")
+        for _ in range(2):
+            self.print_token()
+        self.compile_expression()
+        for _ in range(2):
+            self.print_token()
+        self.compile_statements()
+        self.print_token()
+        self.print_close_header("whileStatement")
 
     def compile_return(self) -> None:
         """Compiles a return statement."""
         # Your code goes here!
-        pass
+        self.print_open_header("returnStatement")
+        self.print_token()
+        if self.tokenizer.cur_token == SEMICOLON:
+            self.print_token()
+        else:
+            self.compile_expression()
+            self.print_token()
+        self.print_close_header("returnStatement")
 
     def compile_if(self) -> None:
         """Compiles a if statement, possibly with a trailing else clause."""
         # Your code goes here!
-        pass
+        self.print_open_header("ifStatement")
+        for _ in range(2):
+            self.print_token()
+        self.compile_expression()
+        for _ in range(2):
+            self.print_token()
+        self.compile_statements()
+        self.print_token()
+        if self.tokenizer.cur_token == "else":
+            for _ in range(2):
+                self.print_token()
+            self.compile_statements()
+            self.print_token()
+        self.print_close_header("ifStatement")
 
     def compile_expression(self) -> None:
         """Compiles an expression."""
         # Your code goes here!
-        pass
+        self.print_open_header("expression")
+        self.compile_term()
+        self.print_close_header("expression")
 
     def compile_term(self) -> None:
         """Compiles a term. 
@@ -98,9 +234,47 @@ class CompilationEngine:
         part of this term and should not be advanced over.
         """
         # Your code goes here!
-        pass
+        self.print_open_header("term")
+        if self.tokenizer.token_type() in [INT_CONST, STRING_CONST]:
+            self.print_token()
+        if self.tokenizer.cur_token in KEYWORD_CONST:
+            self.print_token()
+        if self.tokenizer.cur_token in UNARY_OP:
+            self.print_token()
+            self.compile_term()
+        if self.tokenizer.cur_token == OPEN_PARENTHESIS:
+            self.print_token()
+            self.compile_expression()
+            self.print_token()
+        if self.tokenizer.token_type() == IDENTIFIER:
+            self.print_token()
+        self.print_close_header("term")
 
     def compile_expression_list(self) -> None:
         """Compiles a (possibly empty) comma-separated list of expressions."""
         # Your code goes here!
-        pass
+        self.print_open_header("expressionList")
+        if self.tokenizer.cur_token != CLOSE_PARENTHESIS:
+            self.compile_expression()
+            while self.tokenizer.cur_token == COMMA:
+                self.print_token()
+                self.compile_expression()
+
+        self.print_close_header("expressionList")
+
+    def print_open_header(self, header):
+        self.output_stream.write(self.indent * self.indent_counter)
+        self.output_stream.write(f"<{header}>\n")
+        self.indent_counter += 1
+
+    def print_close_header(self, header):
+        self.indent_counter -= 1
+        self.output_stream.write(self.indent * self.indent_counter)
+        self.output_stream.write(f"</{header}>\n")
+
+    def print_token(self):
+        self.output_stream.write(self.indent * self.indent_counter)
+        self.output_stream.write(f"<{self.tokenizer.token_type().lower()}> "
+                                 f"{self.tokenizer.cur_token} "
+                                 f"</{self.tokenizer.token_type().lower()}>\n")
+        self.tokenizer.advance()

@@ -211,6 +211,8 @@ class JackTokenizer:
             return "INT_CONST"
         elif token.isidentifier():
             return "IDENTIFIER"
+        else:
+            return "IDENTIFIER"
 
     def keyword(self) -> str:
         """

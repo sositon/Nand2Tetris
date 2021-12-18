@@ -24,7 +24,7 @@ HEADERS_DIC = {"KEYWORD": "keyword", "SYMBOL": "symbol",
                "IDENTIFIER": "identifier", "INT_CONST": "integerConstant",
                "STRING_CONST": "stringConstant"}
 OP = ['+', '-', '*', '/', '&', '|', '<', '>', '=']
-UNARY_OP = ['-', '~', '^', '#']
+UNARY_OP = ['-', '~', '#', '^']
 KEYWORD_CONST = ['true', 'false', 'null', 'this']
 
 

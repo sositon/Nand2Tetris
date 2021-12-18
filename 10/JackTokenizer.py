@@ -109,8 +109,8 @@ class JackTokenizer:
                  "false", "null", "this", "let", "do", "if", "else",
                  "while", "return"]
     SYMBOLS = ["{", "}", "(", ")", "[", "]", ".", ",", ";", "+", "-", "*",
-               "/", "&", "|", "<", ">", "=", "~"]
-    SPECIAL_SYMBOLS = {"<": "&lt;", ">": "&gt;", "&": "&amp;"}
+               "/", "&", "|", "<", ">", "=", "~", "#", "^"]
+    SPECIAL_SYMBOLS = {"<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;"}
 
     def __init__(self, input_stream: typing.TextIO) -> None:
         """Opens the input stream and gets ready to tokenize it.

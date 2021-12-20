@@ -19,10 +19,10 @@ class SymbolTable:
     FIELD = "field"
     VAR = "var"
     THIS = "this"
-    # CLASS = "class"
-    # SUBROUTINE = "subroutine"
-    # CONS = "constructor"
-    # METHOD = "method"
+    CLASS = "class"
+    SUBROUTINE = "subroutine"
+    CONS = "constructor"
+    METHOD = "method"
 
     # tuple indexing
     KIND = 0
@@ -106,7 +106,7 @@ class SymbolTable:
             return self.class_table[name][self.TYPE]
         return ""
 
-    def index_of(self, name: str) -> int:
+    def index_of(self, name: str):
         """
         Args:
             name (str):  name of an identifier.
@@ -118,4 +118,4 @@ class SymbolTable:
             return self.subroutine_table[name][self.INDEX]
         elif name in self.class_table:
             return self.class_table[name][self.INDEX]
-        return 0
+        return None

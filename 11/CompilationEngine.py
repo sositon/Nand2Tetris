@@ -6,13 +6,14 @@ Unported License (https://creativecommons.org/licenses/by-nc-sa/3.0/).
 """
 import typing
 from JackTokenizer import *
-
-OPEN_BRACKETS = "["
+from VMWriter import *
+from SymbolTable import *
 
 INT_CONST = "INT_CONST"
 STRING_CONST = "STRING_CONST"
 IDENTIFIER = "IDENTIFIER"
 
+OPEN_BRACKETS = "["
 COMMA = ","
 DOUBLE_SPACE = "  "
 SEMICOLON = ";"
@@ -33,8 +34,8 @@ class CompilationEngine:
     output stream.
     """
 
-    def __init__(self, input_stream: JackTokenizer, output_stream: typing.IO) \
-            -> None:
+    def __init__(self, input_stream: JackTokenizer,
+                 output_stream: typing.TextIO) -> None:
         """
         Creates a new compilation engine with the given input and output. The
         next routine called must be compileClass()
@@ -47,14 +48,20 @@ class CompilationEngine:
         self.output_stream = output_stream
         self.indent_counter = 0
         self.indent = DOUBLE_SPACE
+        self.vm = VMWriter(output_stream)
+        self.sy = SymbolTable()
+        self.class_type = ""
+        self.subroutine_list = list()
         self.compile_class()
 
     def compile_class(self) -> None:
         """Compiles a complete class."""
         # Your code goes here!
         self.print_open_header("class")
-        for _ in range(3):
-            self.print_token()
+        self.print_token()
+        self.class_type = self.tokenizer.identifier()
+        self.print_token()
+        self.print_token()
         if self.tokenizer.cur_token in ["field", "static"]:
             self.compile_class_var_dec()
         if self.tokenizer.cur_token in ['constructor', 'function', 'method']:
@@ -67,11 +74,18 @@ class CompilationEngine:
         # Your code goes here!
         while self.tokenizer.cur_token in ["field", "static"]:
             self.print_open_header("classVarDec")
-            for _ in range(3):
-                self.print_token()
+            t_kind = self.tokenizer.cur_token
+            self.print_token()
+            t_type = self.tokenizer.cur_token
+            self.print_token()
+            t_name = self.tokenizer.cur_token
+            self.sy.define(t_name, t_type, t_kind)
+            self.print_token()
             while self.tokenizer.cur_token == COMMA:
-                for _ in range(2):
-                    self.print_token()
+                self.print_token()
+                t_name = self.tokenizer.cur_token
+                self.sy.define(t_name, t_type, t_kind)
+                self.print_token()
             self.print_token()
             self.print_close_header("classVarDec")
 
@@ -85,7 +99,13 @@ class CompilationEngine:
         while self.tokenizer.cur_token in ['constructor', 'function',
                                            'method']:
             self.print_open_header("subroutineDec")
-            for _ in range(4):
+            self.sy.start_subroutine()
+            if self.tokenizer.cur_token in [self.sy.CONS, self.sy.METHOD]:
+                self.sy.define("this", self.class_type, self.sy.ARG)
+            for _ in range(2):
+                self.print_token()
+            self.subroutine_list.append(self.tokenizer.cur_token)
+            for _ in range(2):
                 self.print_token()
             self.compile_parameter_list()
             self.print_token()
@@ -107,11 +127,18 @@ class CompilationEngine:
         self.print_open_header("parameterList")
         if self.tokenizer.cur_token in ["int", "char", "boolean"] or \
                 self.tokenizer.token_type() == IDENTIFIER:
-            for _ in range(2):
-                self.print_token()
+            t_type = self.tokenizer.cur_token
+            self.print_token()
+            t_name = self.tokenizer.cur_token
+            self.sy.define(t_name, t_type, self.sy.ARG)
+            self.print_token()
             while self.tokenizer.cur_token == COMMA:
-                for _ in range(3):
-                    self.print_token()
+                self.print_token()
+                t_type = self.tokenizer.cur_token
+                self.print_token()
+                t_name = self.tokenizer.cur_token
+                self.sy.define(t_name, t_type, self.sy.ARG)
+                self.print_token()
         self.print_close_header("parameterList")
 
     def compile_var_dec(self) -> None:
@@ -119,11 +146,17 @@ class CompilationEngine:
         # Your code goes here!
         while self.tokenizer.cur_token == "var":
             self.print_open_header("varDec")
-            for _ in range(3):
-                self.print_token()
+            self.print_token()
+            t_type = self.tokenizer.cur_token
+            self.print_token()
+            t_name = self.tokenizer.cur_token
+            self.sy.define(t_name, t_type, self.sy.VAR)
+            self.print_token()
             while self.tokenizer.cur_token == COMMA:
-                for _ in range(2):
-                    self.print_token()
+                self.print_token()
+                t_name = self.tokenizer.cur_token
+                self.sy.define(t_name, t_type, self.sy.VAR)
+                self.print_token()
             self.print_token()
             self.print_close_header("varDec")
 
@@ -291,7 +324,10 @@ class CompilationEngine:
 
     def print_token(self):
         token = self.tokenizer.cur_token
-        if self.tokenizer.token_type() == STRING_CONST:
+        if self.tokenizer.token_type() == IDENTIFIER:
+            self.print_identifier(token)
+            return
+        elif self.tokenizer.token_type() == STRING_CONST:
             token = self.tokenizer.string_val()
         elif token in self.tokenizer.SPECIAL_SYMBOLS:
             token = self.tokenizer.SPECIAL_SYMBOLS[token]
@@ -300,3 +336,16 @@ class CompilationEngine:
         self.output_stream.write(self.indent * self.indent_counter)
         self.output_stream.write(f"<{header}> {token} </{header}>\n")
         self.tokenizer.advance()
+
+    def print_identifier(self, token):
+        header = HEADERS_DIC[self.tokenizer.token_type()]
+        kind = self.sy.kind_of(token)
+        type = self.sy.type_of(token)
+        index = self.sy.index_of(token)
+        if kind and type and index is not None:
+            token = (token, kind, type, index)
+
+        self.output_stream.write(self.indent * self.indent_counter)
+        self.output_stream.write(f"<{header}> {token} </{header}>\n")
+        self.tokenizer.advance()
+

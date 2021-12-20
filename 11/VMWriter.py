@@ -11,7 +11,8 @@ class VMWriter:
     """
     Writes VM commands into a file. Encapsulates the VM command syntax.
     """
-
+    # arithmetic_table = {"ADD": "add", "SUB": "sub", "NEG":"neg",
+    #         "EQ": "eq", "GT", "LT", "AND", "OR", "NOT"}
     def __init__(self, output_stream: typing.TextIO) -> None:
         """Creates a new file and prepares it for writing VM commands."""
         self.out_file = output_stream

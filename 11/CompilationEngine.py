@@ -46,8 +46,8 @@ class CompilationEngine:
         self.tokenizer = input_stream
         self.tokenizer.advance()
         self.output_stream = output_stream
-        self.indent_counter = 0
-        self.indent = DOUBLE_SPACE
+        # self.indent_counter = 0
+        # self.indent = DOUBLE_SPACE
         self.vm = VMWriter(output_stream)
         self.sy = SymbolTable()
         self.class_type = ""
@@ -56,38 +56,28 @@ class CompilationEngine:
 
     def compile_class(self) -> None:
         """Compiles a complete class."""
-        # Your code goes here!
-        self.print_open_header("class")
-        self.print_token()
+        self.tokenizer.advance()
+        # classname
         self.class_type = self.tokenizer.identifier()
-        self.print_token()
-        self.print_token()
+        self.tokenizer.advance()
+        self.tokenizer.advance()
+
         if self.tokenizer.cur_token in ["field", "static"]:
             self.compile_class_var_dec()
         if self.tokenizer.cur_token in ['constructor', 'function', 'method']:
             self.compile_subroutine()
-        self.print_token()
-        self.print_close_header("class")
+        self.tokenizer.advance()
 
     def compile_class_var_dec(self) -> None:
         """Compiles a static declaration or a field declaration."""
-        # Your code goes here!
         while self.tokenizer.cur_token in ["field", "static"]:
-            self.print_open_header("classVarDec")
             t_kind = self.tokenizer.cur_token
-            self.print_token()
+            self.tokenizer.advance()
             t_type = self.tokenizer.cur_token
-            self.print_token()
-            t_name = self.tokenizer.cur_token
-            self.sy.define(t_name, t_type, t_kind)
-            self.print_token()
+            self.define_symbol(t_kind, t_type)
             while self.tokenizer.cur_token == COMMA:
-                self.print_token()
-                t_name = self.tokenizer.cur_token
-                self.sy.define(t_name, t_type, t_kind)
-                self.print_token()
-            self.print_token()
-            self.print_close_header("classVarDec")
+                self.define_symbol(t_kind, t_type)
+            self.tokenizer.advance()
 
     def compile_subroutine(self) -> None:
         """
@@ -95,77 +85,71 @@ class CompilationEngine:
         You can assume that classes with constructors have at least one field,
         you will understand why this is necessary in project 11.
         """
-        # subroutineDec
         while self.tokenizer.cur_token in ['constructor', 'function',
                                            'method']:
-            self.print_open_header("subroutineDec")
             self.sy.start_subroutine()
-            if self.tokenizer.cur_token in [self.sy.CONS, self.sy.METHOD]:
+            self.current_subroutine["func_type"] = self.tokenizer.cur_token
+            self.tokenizer.advance()
+            self.current_subroutine["ret_type"] = self.tokenizer.cur_token
+            self.tokenizer.advance()
+            # adds subroutine name to list
+            self.subroutine_list.append(
+                f"{self.class_type}.{self.tokenizer.cur_token}")
+            self.tokenizer.advance()  # "("
+            self.tokenizer.advance()
+            # if Method: adds 'this' to symbol table
+            if self.current_subroutine["func_type"] == self.sy.METHOD:
                 self.sy.define("this", self.class_type, self.sy.ARG)
-            for _ in range(2):
-                self.print_token()
-            self.subroutine_list.append(self.tokenizer.cur_token)
-            for _ in range(2):
-                self.print_token()
-            self.compile_parameter_list()
-            self.print_token()
+            # General subroutine:
+            self.compile_parameter_list()  # Finished tokenizer.cur_token = ")"
             # subroutineBody
-            self.print_open_header("subroutineBody")
-            self.print_token()
+            self.tokenizer.advance()  # "{"
+            self.tokenizer.advance()  # "(varDec)?"
             if self.tokenizer.cur_token == "var":
                 self.compile_var_dec()
+            # Write function deceleration in VM
+            self.vm.write_function(self.subroutine_list[-1],
+                                   self.sy.var_count(self.sy.VAR))
+            if self.current_subroutine["func_type"] == self.sy.METHOD:
+                # aligns the virtual memory segment this with the base address of the object
+                self.vm.write_push(self.sy.ARG, 0)
+                self.vm.write_pop(self.sy.POINTER, 0)
+            if self.current_subroutine["func_type"] == self.sy.CONS:
+                self.vm.write_push(self.sy.CONSTANT,
+                                   self.sy.var_count(self.sy.FIELD))
+                self.vm.write_call("Memory.Alloc", 1)
+                self.vm.write_pop(self.sy.POINTER, 0)
+            # Statements:
             self.compile_statements()
-            self.print_token()
-            self.print_close_header("subroutineBody")
-            self.print_close_header("subroutineDec")
+            self.tokenizer.advance()  # "}"
 
     def compile_parameter_list(self) -> None:
         """Compiles a (possibly empty) parameter list, not including the 
         enclosing "()".
         """
-        # Your code goes here!
-        self.print_open_header("parameterList")
         if self.tokenizer.cur_token in ["int", "char", "boolean"] or \
                 self.tokenizer.token_type() == IDENTIFIER:
             t_type = self.tokenizer.cur_token
-            self.print_token()
-            t_name = self.tokenizer.cur_token
-            self.sy.define(t_name, t_type, self.sy.ARG)
-            self.print_token()
+            self.define_symbol(self.sy.ARG, t_type)
             while self.tokenizer.cur_token == COMMA:
-                self.print_token()
+                self.tokenizer.advance()
                 t_type = self.tokenizer.cur_token
-                self.print_token()
-                t_name = self.tokenizer.cur_token
-                self.sy.define(t_name, t_type, self.sy.ARG)
-                self.print_token()
-        self.print_close_header("parameterList")
+                self.define_symbol(self.sy.ARG, t_type)
 
     def compile_var_dec(self) -> None:
         """Compiles a var declaration."""
-        # Your code goes here!
         while self.tokenizer.cur_token == "var":
-            self.print_open_header("varDec")
-            self.print_token()
+            self.tokenizer.advance()
             t_type = self.tokenizer.cur_token
-            self.print_token()
-            t_name = self.tokenizer.cur_token
-            self.sy.define(t_name, t_type, self.sy.VAR)
-            self.print_token()
+            self.define_symbol(self.sy.VAR, t_type)
             while self.tokenizer.cur_token == COMMA:
-                self.print_token()
-                t_name = self.tokenizer.cur_token
-                self.sy.define(t_name, t_type, self.sy.VAR)
-                self.print_token()
-            self.print_token()
-            self.print_close_header("varDec")
+                self.define_symbol(self.sy.VAR, t_type)
+            self.tokenizer.advance()
 
     def compile_statements(self) -> None:
         """Compiles a sequence of statements, not including the enclosing 
         "{}".
         """
-        # Your code goes here!
-        self.print_open_header("statements")
         statements_dic = {"let": self.compile_let,
                           "if": self.compile_if,
                           "while": self.compile_while,
@@ -173,45 +157,69 @@ class CompilationEngine:
                           "return": self.compile_return}
         while self.tokenizer.cur_token in statements_dic:
             statements_dic[self.tokenizer.cur_token]()
-        self.print_close_header("statements")
 
     def compile_do(self) -> None:
         """Compiles a do statement."""
-        # Your code goes here!
-        self.print_open_header("doStatement")
-        for _ in range(2):
-            self.print_token()
+
+        self.tokenizer.advance()  # eats "do"
+        first_name = self.tokenizer.cur_token
+        self.tokenizer.advance()
         if self.tokenizer.cur_token == OPEN_PARENTHESIS:
-            self.print_token()
-            self.compile_expression_list()
-            self.print_token()
+            self.tokenizer.advance()  # eats "("
+            n_param = self.compile_expression_list()
+            self.tokenizer.advance()  # eats ")"
+            """"""
+            self.vm.write_call(f"{self.class_type}.{first_name}", n_param)
+            """"""
         elif self.tokenizer.cur_token == DOT:
-            for _ in range(3):
-                self.print_token()
-            self.compile_expression_list()
-            self.print_token()
-        self.print_token()
-        self.print_close_header("doStatement")
+            # if Method push reference to the object
+            if self.sy.type_of(first_name):
+                self.vm.write_push(self.sy.kind_of(first_name),
+                                   self.sy.index_of(first_name))
+            self.tokenizer.advance()
+            second_name = self.tokenizer.cur_token
+            self.tokenizer.advance()
+            self.tokenizer.advance()  # eats "("
+            n_param = self.compile_expression_list()
+            self.tokenizer.advance()  # eats ")"
+            if self.sy.type_of(first_name):
+                self.vm.write_call(f"{self.sy.type_of(first_name)}."
+                                   f"{second_name}", n_param + 1)
+            else:
+                self.vm.write_call(f"{first_name}.{second_name}", n_param)
+        self.vm.write_pop(self.sy.TEMP, 0)
+        self.tokenizer.advance()  # eats ";"
+
+    def compile_return(self) -> None:
+        """Compiles a return statement."""
+        self.tokenizer.advance()  # eats "return"
+        if self.current_subroutine[
+            "func_type"] == self.sy.CONS:  # If constructor
+            self.vm.write_push(self.sy.POINTER, 0)
+            self.tokenizer.advance()  # eats "this"
+        elif self.current_subroutine[
+            "ret_type"] == self.sy.VOID:  # if void return 0
+            self.vm.write_push(self.sy.CONSTANT, 0)
+        else:
+            self.compile_expression()
+        self.tokenizer.advance()  # eats ";"
+        self.vm.write_return()
 
     def compile_let(self) -> None:
         """Compiles a let statement."""
-        # Your code goes here!
-        self.print_open_header("letStatement")
-        for _ in range(2):
-            self.print_token()
+        self.tokenizer.advance()
+        var = self.tokenizer.cur_token
+        self.tokenizer.advance()
         if self.tokenizer.cur_token == OPEN_BRACKETS:
             self.print_token()
             self.compile_expression()
             self.print_token()
-        self.print_token()
+        self.tokenizer.advance()
         self.compile_expression()
-        self.print_token()
-        self.print_close_header("letStatement")
+        self.tokenizer.advance()
 
     def compile_while(self) -> None:
         """Compiles a while statement."""
-        # Your code goes here!
-        self.print_open_header("whileStatement")
         for _ in range(2):
             self.print_token()
         self.compile_expression()
@@ -219,24 +227,9 @@ class CompilationEngine:
             self.print_token()
         self.compile_statements()
         self.print_token()
-        self.print_close_header("whileStatement")
-
-    def compile_return(self) -> None:
-        """Compiles a return statement."""
-        # Your code goes here!
-        self.print_open_header("returnStatement")
-        self.print_token()
-        if self.tokenizer.cur_token == SEMICOLON:
-            self.print_token()
-        else:
-            self.compile_expression()
-            self.print_token()
-        self.print_close_header("returnStatement")
 
     def compile_if(self) -> None:
         """Compiles a if statement, possibly with a trailing else clause."""
-        # Your code goes here!
-        self.print_open_header("ifStatement")
         for _ in range(2):
             self.print_token()
         self.compile_expression()
@@ -249,17 +242,14 @@ class CompilationEngine:
                 self.print_token()
             self.compile_statements()
             self.print_token()
-        self.print_close_header("ifStatement")
 
     def compile_expression(self) -> None:
         """Compiles an expression."""
         # Your code goes here!
-        self.print_open_header("expression")
         self.compile_term()
         while self.tokenizer.cur_token in OP:
             self.print_token()
             self.compile_term()
-        self.print_close_header("expression")
 
     def compile_term(self) -> None:
         """Compiles a term. 
@@ -271,9 +261,9 @@ class CompilationEngine:
         to distinguish between the three possibilities. Any other token is not
         part of this term and should not be advanced over.
         """
-        # Your code goes here!
-        self.print_open_header("term")
-        if self.tokenizer.token_type() in [INT_CONST, STRING_CONST]:
+        if self.tokenizer.token_type() is INT_CONST:
+            self.print_token()
+        if self.tokenizer.token_type() is STRING_CONST:
             self.print_token()
         elif self.tokenizer.cur_token in KEYWORD_CONST:
             self.print_token()
@@ -299,53 +289,21 @@ class CompilationEngine:
                     self.print_token()
                 self.compile_expression_list()
                 self.print_token()
-        self.print_close_header("term")
 
-    def compile_expression_list(self) -> None:
+    def compile_expression_list(self, n=0) -> int:
         """Compiles a (possibly empty) comma-separated list of expressions."""
-        # Your code goes here!
-        self.print_open_header("expressionList")
         if self.tokenizer.cur_token != CLOSE_PARENTHESIS:
+            n += 1
             self.compile_expression()
             while self.tokenizer.cur_token == COMMA:
-                self.print_token()
+                n += 1
+                self.tokenizer.advance()
                 self.compile_expression()
-        self.print_close_header("expressionList")
+        return n
 
-    def print_open_header(self, header):
-        self.output_stream.write(self.indent * self.indent_counter)
-        self.output_stream.write(f"<{header}>\n")
-        self.indent_counter += 1
-
-    def print_close_header(self, header):
-        self.indent_counter -= 1
-        self.output_stream.write(self.indent * self.indent_counter)
-        self.output_stream.write(f"</{header}>\n")
-
-    def print_token(self):
-        token = self.tokenizer.cur_token
-        if self.tokenizer.token_type() == IDENTIFIER:
-            self.print_identifier(token)
-            return
-        elif self.tokenizer.token_type() == STRING_CONST:
-            token = self.tokenizer.string_val()
-        elif token in self.tokenizer.SPECIAL_SYMBOLS:
-            token = self.tokenizer.SPECIAL_SYMBOLS[token]
-        header = HEADERS_DIC[self.tokenizer.token_type()]
-
-        self.output_stream.write(self.indent * self.indent_counter)
-        self.output_stream.write(f"<{header}> {token} </{header}>\n")
+    def define_symbol(self, t_kind, t_type):
         self.tokenizer.advance()
-
-    def print_identifier(self, token):
-        header = HEADERS_DIC[self.tokenizer.token_type()]
-        kind = self.sy.kind_of(token)
-        type = self.sy.type_of(token)
-        index = self.sy.index_of(token)
-        if kind and type and index is not None:
-            token = (token, kind, type, index)
-
-        self.output_stream.write(self.indent * self.indent_counter)
-        self.output_stream.write(f"<{header}> {token} </{header}>\n")
+        t_name = self.tokenizer.cur_token
+        self.sy.define(t_name, t_type, t_kind)
         self.tokenizer.advance()
 

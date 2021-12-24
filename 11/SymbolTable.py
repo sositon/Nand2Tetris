@@ -23,6 +23,10 @@ class SymbolTable:
     SUBROUTINE = "subroutine"
     CONS = "constructor"
     METHOD = "method"
+    POINTER = "pointer"
+    CONSTANT = "constant"
+    VOID = "void"
+    TEMP = "temp"
 
     # tuple indexing
     KIND = 0

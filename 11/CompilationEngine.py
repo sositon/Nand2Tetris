@@ -42,7 +42,6 @@ class CompilationEngine:
         :param input_stream: The input stream.
         :param output_stream: The output stream.
         """
-        # Your code goes here!
         self.tokenizer = input_stream
         self.tokenizer.advance()
         self.output_stream = output_stream
@@ -52,6 +51,8 @@ class CompilationEngine:
         self.sy = SymbolTable()
         self.class_type = ""
         self.subroutine_list = list()
+        # Current compiled subroutine dict:
+        self.current_subroutine = {"func_type": "", "ret_type": "", "name": ""}
         self.compile_class()
 
     def compile_class(self) -> None:

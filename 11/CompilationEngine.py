@@ -117,7 +117,7 @@ class CompilationEngine:
             if self.current_subroutine["func_type"] == self.sy.CONS:
                 self.vm.write_push(self.sy.CONSTANT,
                                    self.sy.var_count(self.sy.FIELD))
-                self.vm.write_call("Memory.Alloc", 1)
+                self.vm.write_call("Memory.alloc", 1)
                 self.vm.write_pop(self.sy.POINTER, 0)
             # Statements:
             self.compile_statements()
@@ -222,8 +222,8 @@ class CompilationEngine:
     def compile_while(self) -> None:
         """Compiles a while statement."""
         # while head label:
-        label1 = self.class_type + "." + str(self.label_counter)
         self.label_counter += 1
+        label1 = self.class_type + "." + str(self.label_counter)
         self.vm.write_label(label1)
         for _ in range(2):  # eats 'while ('
             self.tokenizer.advance()
@@ -245,9 +245,9 @@ class CompilationEngine:
 
     def compile_if(self) -> None:
         """Compiles a if statement, possibly with a trailing else clause."""
-        self.label_counter += 1
         label_false = "IF_FALSE" + "." + str(self.label_counter)
         label_end_block = "IF_END" + "." + str(self.label_counter)
+        self.label_counter += 1
 
         # if block compilation
         for _ in range(2):  # eats 'if ('
@@ -268,7 +268,7 @@ class CompilationEngine:
                 self.tokenizer.advance()
             self.compile_statements()  # Compile else block statements
             self.tokenizer.advance()  # eats '}'
-            self.vm.write_label(label_end_block)
+        self.vm.write_label(label_end_block)
 
     def compile_expression(self) -> None:
         """Compiles an expression."""

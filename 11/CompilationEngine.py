@@ -227,7 +227,7 @@ class CompilationEngine:
         for _ in range(2):  # eats 'while ('
             self.tokenizer.advance()
         self.compile_expression()
-        self.vm.write_arithmetic("NEG")
+        self.vm.write_arithmetic("NOT")
         for _ in range(2):  # eats ') {'
             self.tokenizer.advance()
         # if to skip while
@@ -244,10 +244,15 @@ class CompilationEngine:
 
     def compile_if(self) -> None:
         """Compiles a if statement, possibly with a trailing else clause."""
+        self.label_counter += 1
+        label_false = "IF_FALSE" + "." + str(self.label_counter)
+        label_end_block = "IF_END" + "." + str(self.label_counter)
+
+        # if block compilation
         for _ in range(2):  # eats 'if ('
             self.tokenizer.advance()
         self.compile_expression()
-        self.vm.write_arithmetic("NEG")
+        self.vm.write_arithmetic("NOT")
         for _ in range(2):  # eats ') {'
             self.tokenizer.advance()
         label1 = self.class_type + "." + str(self.label_counter)
@@ -260,13 +265,9 @@ class CompilationEngine:
         if self.tokenizer.cur_token == "else":
             for _ in range(2):  # eats 'else {'
                 self.tokenizer.advance()
-            label2 = self.class_type + "." + str(self.label_counter)
-            self.label_counter += 1
-            self.vm.write_goto(label2)  # skips else section
-            self.vm.write_label(label1)
-            self.compile_statements()
-            self.vm.write_label(label2)
+            self.compile_statements()  # Compile else block statements
             self.tokenizer.advance()  # eats '}'
+            self.vm.write_label(label_end_block)
 
     def compile_expression(self) -> None:
         """Compiles an expression."""
@@ -287,12 +288,24 @@ class CompilationEngine:
         part of this term and should not be advanced over.
         """
         if self.tokenizer.token_type() is INT_CONST:
+            self.vm.write_push(self.sy.CONSTANT, self.tokenizer.cur_token)
+            self.tokenizer.advance()
+        elif self.tokenizer.cur_token in KEYWORD_CONST:
+            if self.tokenizer.cur_token in ["null", "false"]:
+                self.vm.write_push(self.sy.CONSTANT, 0)
+            elif self.tokenizer.cur_token == "true":
+                self.vm.write_push(self.sy.CONSTANT, 1)
+                self.vm.write_arithmetic("NEG")
+            else:
+                # if 'this'
+                self.vm.write_push(self.sy.POINTER, 0)
             self.tokenizer.advance()
         if self.tokenizer.token_type() is STRING_CONST:
             self.tokenizer.advance()
         elif self.tokenizer.cur_token in KEYWORD_CONST:
             self.tokenizer.advance()
         elif self.tokenizer.cur_token in UNARY_OP:
+            unary_op = self.tokenizer.cur_token
             self.tokenizer.advance()
             self.compile_term()
         elif self.tokenizer.cur_token == OPEN_PARENTHESIS:
@@ -300,20 +313,35 @@ class CompilationEngine:
             self.compile_expression()
             self.tokenizer.advance()
         elif self.tokenizer.token_type() == IDENTIFIER:
+            first_name = self.tokenizer.cur_token
             self.tokenizer.advance()
             if self.tokenizer.cur_token == OPEN_BRACKETS:
                 self.tokenizer.advance()
                 self.compile_expression()
                 self.tokenizer.advance()
             elif self.tokenizer.cur_token == OPEN_PARENTHESIS:
-                self.tokenizer.advance()
-                self.compile_expression_list()
-                self.tokenizer.advance()
+                self.tokenizer.advance()  # eats "("
+                n_param = self.compile_expression_list()
+                self.tokenizer.advance()  # eats ")"
+                self.vm.write_call(f"{self.class_type}.{first_name}", n_param)
             elif self.tokenizer.cur_token == DOT:
-                for _ in range(3):
-                    self.tokenizer.advance()
-                self.compile_expression_list()
-                self.tokenizer.advance()
+                # if Method push reference to the object
+                if self.sy.type_of(first_name):  # if varName
+                    self.vm.write_push(self.sy.kind_of(first_name),
+                                       self.sy.index_of(first_name))
+                self.tokenizer.advance()  # eats '.'
+                second_name = self.tokenizer.cur_token
+                self.tokenizer.advance()  # eats second_name
+                self.tokenizer.advance()  # eats "("
+                n_param = self.compile_expression_list()
+                self.tokenizer.advance()  # eats ")"
+                if self.sy.type_of(first_name):
+                    self.vm.write_call(f"{self.sy.type_of(first_name)}."
+                                       f"{second_name}", n_param + 1)
+                else:
+                    self.vm.write_call(f"{first_name}.{second_name}", n_param)
+            else:
+                self.vm.write_push(self.sy.kind_of(first_name),self.sy.index_of(first_name))
 
     def compile_expression_list(self, n=0) -> int:
         """Compiles a (possibly empty) comma-separated list of expressions."""

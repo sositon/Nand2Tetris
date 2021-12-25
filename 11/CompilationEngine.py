@@ -24,8 +24,9 @@ CLOSE_PARENTHESIS = ")"
 HEADERS_DIC = {"KEYWORD": "keyword", "SYMBOL": "symbol",
                "IDENTIFIER": "identifier", "INT_CONST": "integerConstant",
                "STRING_CONST": "stringConstant"}
-OP = ['+', '-', '*', '/', '&', '|', '<', '>', '=']
-UNARY_OP = ['-', '~', '#', '^']
+OP = {'+': "ADD", '-': "SUB", '*': "Math.multiply", '/': "Math.divide",
+      '&': "AND", '|': "OR", '<': "LT", '>': "GT", '=': "EQ"}
+UNARY_OP = {'-': "NEG", '~': "NOT", '#': "SHIFTRIGHT", '^': "SHIFTLEFT"}
 KEYWORD_CONST = ['true', 'false', 'null', 'this']
 
 
@@ -255,13 +256,13 @@ class CompilationEngine:
         self.vm.write_arithmetic("NOT")
         for _ in range(2):  # eats ') {'
             self.tokenizer.advance()
-        label1 = self.class_type + "." + str(self.label_counter)
-        self.label_counter += 1
-        # if go to else
-        self.vm.write_if(label1)
-        # regular if statmentes
-        self.compile_statements()
+        self.vm.write_if(label_false)  # jump to else
+        self.compile_statements()  # Compile if block statements
         self.tokenizer.advance()  # eats '}'
+        self.vm.write_goto(label_end_block)
+        self.vm.write_label(label_false)
+
+        # else block compilation
         if self.tokenizer.cur_token == "else":
             for _ in range(2):  # eats 'else {'
                 self.tokenizer.advance()
@@ -271,11 +272,19 @@ class CompilationEngine:
 
     def compile_expression(self) -> None:
         """Compiles an expression."""
-        # Your code goes here!
+        op_list = []
         self.compile_term()
         while self.tokenizer.cur_token in OP:
+            op = self.tokenizer.cur_token
             self.tokenizer.advance()
             self.compile_term()
+            if op in ["*", "/"]:
+                self.vm.write_call(OP[op], 2)
+            else:
+                op_list.append(op)
+        # writes operators in reverse order
+        for op in op_list[::-1]:
+            self.vm.write_arithmetic(OP[op])
 
     def compile_term(self) -> None:
         """Compiles a term. 
@@ -301,13 +310,21 @@ class CompilationEngine:
                 self.vm.write_push(self.sy.POINTER, 0)
             self.tokenizer.advance()
         if self.tokenizer.token_type() is STRING_CONST:
-            self.tokenizer.advance()
-        elif self.tokenizer.cur_token in KEYWORD_CONST:
+            # push length of string to stack
+            self.vm.write_push(self.sy.CONSTANT, len(self.tokenizer.cur_token))
+            # call for string.new constructor
+            self.vm.write_call("String.new", 1)
+            for char in self.tokenizer.cur_token:
+                # push ascii value of char to stack
+                self.vm.write_push(self.sy.CONSTANT, ord(char))
+                # call for string.appendChar
+                self.vm.write_call("String.appendChar", 2)
             self.tokenizer.advance()
         elif self.tokenizer.cur_token in UNARY_OP:
             unary_op = self.tokenizer.cur_token
             self.tokenizer.advance()
             self.compile_term()
+            self.vm.write_arithmetic(UNARY_OP[unary_op])
         elif self.tokenizer.cur_token == OPEN_PARENTHESIS:
             self.tokenizer.advance()
             self.compile_expression()

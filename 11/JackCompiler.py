@@ -86,7 +86,7 @@ def compile_file(
     """
     # Your code goes here!
     tokenizer = JackTokenizer(input_file)
-    parser = CompilationEngine(tokenizer, output_file)
+    CompilationEngine(tokenizer, output_file)
 
 
 if "__main__" == __name__:

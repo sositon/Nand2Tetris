@@ -44,13 +44,11 @@ class CompilationEngine:
         """
         self.tokenizer = input_stream
         self.tokenizer.advance()
-        self.output_stream = output_stream
-        # self.indent_counter = 0
-        # self.indent = DOUBLE_SPACE
         self.vm = VMWriter(output_stream)
         self.sy = SymbolTable()
         self.class_type = ""
         self.subroutine_list = list()
+        self.label_counter = 0
         # Current compiled subroutine dict:
         self.current_subroutine = {"func_type": "", "ret_type": "", "name": ""}
         self.compile_class()
@@ -208,48 +206,74 @@ class CompilationEngine:
 
     def compile_let(self) -> None:
         """Compiles a let statement."""
-        self.tokenizer.advance()
+        self.tokenizer.advance()    # eats "let"
         var = self.tokenizer.cur_token
         self.tokenizer.advance()
         if self.tokenizer.cur_token == OPEN_BRACKETS:
-            self.print_token()
+            self.tokenizer.advance()
             self.compile_expression()
-            self.print_token()
-        self.tokenizer.advance()
+            self.tokenizer.advance()
+        self.tokenizer.advance()    # eats "="
         self.compile_expression()
-        self.tokenizer.advance()
+        self.vm.write_pop(self.sy.kind_of(var), self.sy.index_of(var))
+        self.tokenizer.advance()    # eats ";"
 
     def compile_while(self) -> None:
         """Compiles a while statement."""
-        for _ in range(2):
-            self.print_token()
+        # while head label:
+        label1 = self.class_type + "." + str(self.label_counter)
+        self.label_counter += 1
+        self.vm.write_label(label1)
+        for _ in range(2):  # eats 'while ('
+            self.tokenizer.advance()
         self.compile_expression()
-        for _ in range(2):
-            self.print_token()
+        self.vm.write_arithmetic("NEG")
+        for _ in range(2):  # eats ') {'
+            self.tokenizer.advance()
+        # if to skip while
+        label2 = self.class_type + "." + str(self.label_counter)
+        self.label_counter += 1
+        self.vm.write_if(label2)
+        # compile statements
         self.compile_statements()
-        self.print_token()
+        # go to head label
+        self.vm.write_goto(label1)
+        # while end label
+        self.vm.write_label(label2)
+        self.tokenizer.advance()  # eats '}'
 
     def compile_if(self) -> None:
         """Compiles a if statement, possibly with a trailing else clause."""
-        for _ in range(2):
-            self.print_token()
+        for _ in range(2):  # eats 'if ('
+            self.tokenizer.advance()
         self.compile_expression()
-        for _ in range(2):
-            self.print_token()
+        self.vm.write_arithmetic("NEG")
+        for _ in range(2):  # eats ') {'
+            self.tokenizer.advance()
+        label1 = self.class_type + "." + str(self.label_counter)
+        self.label_counter += 1
+        # if go to else
+        self.vm.write_if(label1)
+        # regular if statmentes
         self.compile_statements()
-        self.print_token()
+        self.tokenizer.advance()  # eats '}'
         if self.tokenizer.cur_token == "else":
-            for _ in range(2):
-                self.print_token()
+            for _ in range(2):  # eats 'else {'
+                self.tokenizer.advance()
+            label2 = self.class_type + "." + str(self.label_counter)
+            self.label_counter += 1
+            self.vm.write_goto(label2)  # skips else section
+            self.vm.write_label(label1)
             self.compile_statements()
-            self.print_token()
+            self.vm.write_label(label2)
+            self.tokenizer.advance()  # eats '}'
 
     def compile_expression(self) -> None:
         """Compiles an expression."""
         # Your code goes here!
         self.compile_term()
         while self.tokenizer.cur_token in OP:
-            self.print_token()
+            self.tokenizer.advance()
             self.compile_term()
 
     def compile_term(self) -> None:
@@ -263,33 +287,33 @@ class CompilationEngine:
         part of this term and should not be advanced over.
         """
         if self.tokenizer.token_type() is INT_CONST:
-            self.print_token()
+            self.tokenizer.advance()
         if self.tokenizer.token_type() is STRING_CONST:
-            self.print_token()
+            self.tokenizer.advance()
         elif self.tokenizer.cur_token in KEYWORD_CONST:
-            self.print_token()
+            self.tokenizer.advance()
         elif self.tokenizer.cur_token in UNARY_OP:
-            self.print_token()
+            self.tokenizer.advance()
             self.compile_term()
         elif self.tokenizer.cur_token == OPEN_PARENTHESIS:
-            self.print_token()
+            self.tokenizer.advance()
             self.compile_expression()
-            self.print_token()
+            self.tokenizer.advance()
         elif self.tokenizer.token_type() == IDENTIFIER:
-            self.print_token()
+            self.tokenizer.advance()
             if self.tokenizer.cur_token == OPEN_BRACKETS:
-                self.print_token()
+                self.tokenizer.advance()
                 self.compile_expression()
-                self.print_token()
+                self.tokenizer.advance()
             elif self.tokenizer.cur_token == OPEN_PARENTHESIS:
-                self.print_token()
+                self.tokenizer.advance()
                 self.compile_expression_list()
-                self.print_token()
+                self.tokenizer.advance()
             elif self.tokenizer.cur_token == DOT:
                 for _ in range(3):
-                    self.print_token()
+                    self.tokenizer.advance()
                 self.compile_expression_list()
-                self.print_token()
+                self.tokenizer.advance()
 
     def compile_expression_list(self, n=0) -> int:
         """Compiles a (possibly empty) comma-separated list of expressions."""
@@ -307,4 +331,3 @@ class CompilationEngine:
         t_name = self.tokenizer.cur_token
         self.sy.define(t_name, t_type, t_kind)
         self.tokenizer.advance()
-

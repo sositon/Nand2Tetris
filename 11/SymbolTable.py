@@ -19,6 +19,7 @@ class SymbolTable:
     FIELD = "field"
     VAR = "var"
     THIS = "this"
+    THAT = "that"
     CLASS = "class"
     SUBROUTINE = "subroutine"
     CONS = "constructor"

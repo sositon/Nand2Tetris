@@ -169,7 +169,8 @@ class CompilationEngine:
             n_param = self.compile_expression_list()
             self.tokenizer.advance()  # eats ")"
             """"""
-            self.vm.write_call(f"{self.class_type}.{first_name}", n_param)
+            self.vm.write_push(self.sy.POINTER, 0)
+            self.vm.write_call(f"{self.class_type}.{first_name}", n_param + 1)
             """"""
         elif self.tokenizer.cur_token == DOT:
             # if Method push reference to the object
@@ -183,6 +184,8 @@ class CompilationEngine:
             n_param = self.compile_expression_list()
             self.tokenizer.advance()  # eats ")"
             if self.sy.type_of(first_name):
+                self.vm.write_push(self.sy.kind_of(first_name),
+                                   self.sy.index_of(first_name))
                 self.vm.write_call(f"{self.sy.type_of(first_name)}."
                                    f"{second_name}", n_param + 1)
             else:
@@ -193,12 +196,10 @@ class CompilationEngine:
     def compile_return(self) -> None:
         """Compiles a return statement."""
         self.tokenizer.advance()  # eats "return"
-        if self.current_subroutine[
-            "func_type"] == self.sy.CONS:  # If constructor
+        if self.current_subroutine["func_type"] == self.sy.CONS:  # If constructor
             self.vm.write_push(self.sy.POINTER, 0)
             self.tokenizer.advance()  # eats "this"
-        elif self.current_subroutine[
-            "ret_type"] == self.sy.VOID:  # if void return 0
+        elif self.current_subroutine["ret_type"] == self.sy.VOID:  # if void return 0
             self.vm.write_push(self.sy.CONSTANT, 0)
         else:
             self.compile_expression()
@@ -311,10 +312,10 @@ class CompilationEngine:
             self.tokenizer.advance()
         if self.tokenizer.token_type() is STRING_CONST:
             # push length of string to stack
-            self.vm.write_push(self.sy.CONSTANT, len(self.tokenizer.cur_token))
+            self.vm.write_push(self.sy.CONSTANT, len(self.tokenizer.string_val()))
             # call for string.new constructor
             self.vm.write_call("String.new", 1)
-            for char in self.tokenizer.cur_token:
+            for char in self.tokenizer.string_val():
                 # push ascii value of char to stack
                 self.vm.write_push(self.sy.CONSTANT, ord(char))
                 # call for string.appendChar

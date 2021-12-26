@@ -212,19 +212,31 @@ class CompilationEngine:
         var = self.tokenizer.cur_token
         self.tokenizer.advance()
         if self.tokenizer.cur_token == OPEN_BRACKETS:
-            self.tokenizer.advance()
+            self.tokenizer.advance()  # eats '['
+            # Push arr
+            self.vm.write_push(self.sy.kind_of(var),
+                               self.sy.index_of(var))
             self.compile_expression()
-            self.tokenizer.advance()
-        self.tokenizer.advance()    # eats "="
-        self.compile_expression()
-        self.vm.write_pop(self.sy.kind_of(var), self.sy.index_of(var))
+            self.vm.write_arithmetic("ADD")  # the index in stack's top
+            self.tokenizer.advance()  # eats ']'
+            self.tokenizer.advance()  # eats "="
+            self.compile_expression()
+            self.vm.write_pop(self.sy.TEMP, 0)
+            self.vm.write_pop(self.sy.POINTER, 1)
+            self.vm.write_push(self.sy.TEMP, 0)
+            self.vm.write_pop(self.sy.THAT, 0)
+        else:
+            self.tokenizer.advance()  # eats "="
+            self.compile_expression()
+            self.vm.write_pop(self.sy.kind_of(var), self.sy.index_of(var))
         self.tokenizer.advance()    # eats ";"
 
     def compile_while(self) -> None:
         """Compiles a while statement."""
         # while head label:
+        label1 = "WHILE_TRUE" + "." + str(self.label_counter)
+        label2 = "WHILE_FALSE" + "." + str(self.label_counter)
         self.label_counter += 1
-        label1 = self.class_type + "." + str(self.label_counter)
         self.vm.write_label(label1)
         for _ in range(2):  # eats 'while ('
             self.tokenizer.advance()
@@ -233,8 +245,6 @@ class CompilationEngine:
         for _ in range(2):  # eats ') {'
             self.tokenizer.advance()
         # if to skip while
-        label2 = self.class_type + "." + str(self.label_counter)
-        self.label_counter += 1
         self.vm.write_if(label2)
         # compile statements
         self.compile_statements()
@@ -334,9 +344,15 @@ class CompilationEngine:
             first_name = self.tokenizer.cur_token
             self.tokenizer.advance()
             if self.tokenizer.cur_token == OPEN_BRACKETS:
-                self.tokenizer.advance()
+                self.tokenizer.advance()  # eats '['
+                # Push arr
+                self.vm.write_push(self.sy.kind_of(first_name),
+                                   self.sy.index_of(first_name))
                 self.compile_expression()
-                self.tokenizer.advance()
+                self.vm.write_arithmetic("ADD")  # the index in stack's top
+                self.vm.write_pop(self.sy.POINTER, 1)
+                self.vm.write_push(self.sy.THAT, 0)
+                self.tokenizer.advance()  # eats ']'
             elif self.tokenizer.cur_token == OPEN_PARENTHESIS:
                 self.tokenizer.advance()  # eats "("
                 n_param = self.compile_expression_list()

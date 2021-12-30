@@ -165,11 +165,11 @@ class CompilationEngine:
         first_name = self.tokenizer.cur_token
         self.tokenizer.advance()
         if self.tokenizer.cur_token == OPEN_PARENTHESIS:
+            self.vm.write_push(self.sy.POINTER, 0)
             self.tokenizer.advance()  # eats "("
             n_param = self.compile_expression_list()
             self.tokenizer.advance()  # eats ")"
             """"""
-            self.vm.write_push(self.sy.POINTER, 0)
             self.vm.write_call(f"{self.class_type}.{first_name}", n_param + 1)
             """"""
         elif self.tokenizer.cur_token == DOT:
@@ -177,15 +177,13 @@ class CompilationEngine:
             if self.sy.type_of(first_name):
                 self.vm.write_push(self.sy.kind_of(first_name),
                                    self.sy.index_of(first_name))
-            self.tokenizer.advance()
+            self.tokenizer.advance()    # eats "."
             second_name = self.tokenizer.cur_token
-            self.tokenizer.advance()
+            self.tokenizer.advance()    # eats second name
             self.tokenizer.advance()  # eats "("
             n_param = self.compile_expression_list()
             self.tokenizer.advance()  # eats ")"
             if self.sy.type_of(first_name):
-                self.vm.write_push(self.sy.kind_of(first_name),
-                                   self.sy.index_of(first_name))
                 self.vm.write_call(f"{self.sy.type_of(first_name)}."
                                    f"{second_name}", n_param + 1)
             else:
@@ -320,7 +318,7 @@ class CompilationEngine:
                 # if 'this'
                 self.vm.write_push(self.sy.POINTER, 0)
             self.tokenizer.advance()
-        if self.tokenizer.token_type() is STRING_CONST:
+        elif self.tokenizer.token_type() is STRING_CONST:
             # push length of string to stack
             self.vm.write_push(self.sy.CONSTANT, len(self.tokenizer.string_val()))
             # call for string.new constructor
@@ -343,6 +341,7 @@ class CompilationEngine:
         elif self.tokenizer.token_type() == IDENTIFIER:
             first_name = self.tokenizer.cur_token
             self.tokenizer.advance()
+            # ARR
             if self.tokenizer.cur_token == OPEN_BRACKETS:
                 self.tokenizer.advance()  # eats '['
                 # Push arr
@@ -353,11 +352,15 @@ class CompilationEngine:
                 self.vm.write_pop(self.sy.POINTER, 1)
                 self.vm.write_push(self.sy.THAT, 0)
                 self.tokenizer.advance()  # eats ']'
+            # func
             elif self.tokenizer.cur_token == OPEN_PARENTHESIS:
                 self.tokenizer.advance()  # eats "("
+                self.vm.write_push(self.sy.POINTER, 0)
                 n_param = self.compile_expression_list()
                 self.tokenizer.advance()  # eats ")"
-                self.vm.write_call(f"{self.class_type}.{first_name}", n_param)
+                self.vm.write_call(f"{self.class_type}.{first_name}",
+                                   n_param+1)
+            # method
             elif self.tokenizer.cur_token == DOT:
                 # if Method push reference to the object
                 if self.sy.type_of(first_name):  # if varName

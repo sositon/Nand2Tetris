@@ -9,6 +9,8 @@
  */
 class Math {
 
+    static Array TwoToThe; // arr of 2 powers
+
     /** Initializes the library. */
     function void init() {
     var int i,j;
@@ -26,8 +28,14 @@ class Math {
     return;
     }
 
-    /** Returns the absolute value of x. */
+    /** Returns the absolute value of x.
+     16 bit val mst is 0 == positive
+     */
     function int abs(int x) {
+       if (bit(x,15)){
+        return -x;
+       }
+       return x;
     }
 
     /** Returns the product of x and y. 
@@ -36,6 +44,20 @@ class Math {
      *  the Jack expressions x*y and multiply(x,y) return the same value.
      */
     function int multiply(int x, int y) {
+        var int sum, shiftedX;
+        let i = 0;
+        let sum = 0;
+
+        let shiftedX = x;
+
+        while(i < 15){
+            if (bit(y,i)){
+                let sum = sum + shiftedX;
+            }
+            let shiftedX = shiftedX + shiftedX;
+            let i = i + 1;
+        }
+        return sum;
     }
 
     /** Returns the integer part of x/y.
@@ -68,6 +90,17 @@ class Math {
 
     /** Returns the integer part of the square root of x. */
     function int sqrt(int x) {
+        var int y,j,cond;
+        let y = 0;
+        let j = 7;
+        while(j>0){
+            let cond = ((y+TwoToThe[j])*(y+TwoToThe[j]));
+            if (cond <= x & cond > 0){
+                let y = y+TwoToThe[j];
+            }
+            let j = j-1;
+        }
+        return y;
     }
 
     /** Returns the greater number. */

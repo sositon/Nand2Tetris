@@ -50,7 +50,7 @@ class JackTokenizer:
     'static' | 'var' | 'int' | 'char' | 'boolean' | 'void' | 'true' | 'false'
     | 'null' | 'this' | 'let' | 'do' | 'if' | 'else' | 'while' | 'return'
     2. symbol:  '{' | '}' | '(' | ')' | '[' | ']' | '.' | ',' | ';' | '+' |
-    '-' | '*' | '/' | '&' | '|' | '<' | '>' | '=' | '~' | '^' | '#'
+    '-' | '*' | '/' | '&' | '|' | '<' | '>' | '=' | '~' | '^' - leftshift | '#'
     3. integerConstant: A decimal number in the range 0-32767.
     4. StringConstant: '"' A sequence of Unicode characters not including
     double quote or newline '"'

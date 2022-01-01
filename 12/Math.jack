@@ -9,8 +9,6 @@
  */
 class Math {
 
-    static Array TwoToThe; // arr of 2 powers
-
     /** Initializes the library. */
     function void init() {
     var int i,j;
@@ -46,14 +44,13 @@ class Math {
         var int sum,i, shiftedX;
         let i = 0;
         let sum = 0;
-
         let shiftedX = x;
 
         while(i < 15){
             if (Math.bit(y,i)){
                 let sum = sum + shiftedX;
             }
-            let shiftedX = shiftedX + shiftedX;
+            let shiftedX = ^shiftedX;
             let i = i + 1;
         }
         return sum;
@@ -117,9 +114,7 @@ class Math {
         return b;
     }
 
-    /** returns true if i-th bit of x is 1,
-     * false otherwise
-     */
+    /** returns true if i-th bit of x is 1, false otherwise. */
     function boolean bit(int x, int i){
         return ((x & TwoToThe[i]) = TwoToThe[i]);
     }

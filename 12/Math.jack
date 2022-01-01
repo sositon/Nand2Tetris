@@ -9,6 +9,8 @@
  */
 class Math {
 
+    static Array TwoToThe; // arr of 2 powers
+
     /** Initializes the library. */
     function void init() {
     var int i,j;

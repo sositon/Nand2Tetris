@@ -9,6 +9,8 @@
  */
 class Math {
 
+    static Array TwoToThe; // arr of 2 powers
+
     /** Initializes the library. */
     function void init() {
     var int i,j;
@@ -19,8 +21,8 @@ class Math {
 
     while(i<16){
         let TwoToThe[i] = j;
-        i = i+1;
-        j = j+j;
+        let i = i+1;
+        let j = j+j;
     }
     return;
     }
@@ -29,7 +31,7 @@ class Math {
      16 bit val mst is 0 == positive
      */
     function int abs(int x) {
-       if (bit(x,15)){
+       if (Math.bit(x,15)){
         return -x;
        }
        return x;
@@ -41,14 +43,14 @@ class Math {
      *  the Jack expressions x*y and multiply(x,y) return the same value.
      */
     function int multiply(int x, int y) {
-        var int sum, shiftedX;
+        var int sum,i, shiftedX;
         let i = 0;
         let sum = 0;
 
         let shiftedX = x;
 
         while(i < 15){
-            if (bit(y,i)){
+            if (Math.bit(y,i)){
                 let sum = sum + shiftedX;
             }
             let shiftedX = shiftedX + shiftedX;
@@ -65,7 +67,7 @@ class Math {
     function int divide(int x, int y) {
         // Check if y = 0 ??
         var int q;
-        var sign;
+        var int sign;
         let sign = -1;
         if (Math.bit(x, 15) = Math.bit(y, 15)){
             let sign = 1;
@@ -75,8 +77,8 @@ class Math {
         if(( y > x ) | (y < 0)){
             return 0;
         }
-        let q = divide(x,2*y);
-        if ((x-(2*q*y) < y){
+        let q = Math.divide(x,2*y);
+        if ((x-(2*q*y) < y)){
             return sign * 2 * q;
         }
         else{
@@ -91,7 +93,7 @@ class Math {
         let j = 7;
         while(j>0){
             let cond = ((y+TwoToThe[j])*(y+TwoToThe[j]));
-            if (cond <= x & cond > 0){
+            if (((cond < x) & (cond < x)) & (cond > 0)){
                 let y = y+TwoToThe[j];
             }
             let j = j-1;

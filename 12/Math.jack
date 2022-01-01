@@ -9,8 +9,6 @@
  */
 class Math {
 
-    static Array TwoToThe; // arr of 2 powers
-
     /** Initializes the library. */
     function void init() {
     var int i,j;
@@ -24,7 +22,6 @@ class Math {
         i = i+1;
         j = j+j;
     }
-
     return;
     }
 
@@ -70,7 +67,7 @@ class Math {
         var int q;
         var sign;
         let sign = -1;
-        if (bit(x, 15) = bit(y, 15)){
+        if (Math.bit(x, 15) = Math.bit(y, 15)){
             let sign = 1;
         }
         let x = Math.abs(x);
@@ -83,9 +80,8 @@ class Math {
             return sign * 2 * q;
         }
         else{
-            return sign * (2 * q) + 1;
+            return (sign * 2 * q) + 1;
         }
-    }
     }
 
     /** Returns the integer part of the square root of x. */

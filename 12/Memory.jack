@@ -13,22 +13,83 @@
  * consists of 32,768 words, each holding a 16-bit binary number.
  */ 
 class Memory {
+    static Array ram;
+    static Array freeList;
 
     /** Initializes the class. */
     function void init() {
+        let ram = 0;
+        let freeList = 2048;
+        let freeList[0] = null; // next
+        let freeList[1] = 14335; // heapLength
+        return;
     }
 
     /** Returns the RAM value at the given address. */
     function int peek(int address) {
+        return ram[address];
     }
 
     /** Sets the RAM value at the given address to the given value. */
     function void poke(int address, int value) {
+        let ram[address] = value;
+        return;
     }
 
     /** Finds an available RAM block of the given size and returns
      *  a reference to its base address. */
     function int alloc(int size) {
+        // Pseudocode:
+        // 1. Search freeList using best-fit or first-fit heuristics to obtain
+        //    a segment with segment.length > size.
+        //    If no such segment is found, return -1.
+        // 2. block = needed part of the found segment (or all of it, if the
+        //            segment remainder is too small).
+        // 3. block[-1] = size + 1 // Remember block size, for de-allocation
+        // 4. Update freeList to reflect the allocation
+        // 5. Return block
+        // The figure MemoryTest/MemoryFreeListExample.png illustrates how
+        // the freeList should look like.
+
+        // init variables
+        var Array prev,res;
+        var int len;
+        var Array runner;
+
+        let runner = freeList;
+        if (size < 0){
+            do Sys.error(5);
+        }
+
+        while(runner[1] < size){
+        if (runner[0] = null)
+            {
+                // no alc
+                return -1;
+            }
+        }
+            let prev = runner;
+            let runner = runner[0];
+        }
+
+        // if no chunk found what to do?
+        // change the old block
+
+
+        let len = runner[1];
+        let res = runner + len - size - 2;
+        let res[0] = null;
+        let res[1] = size+2;
+
+        if (res = runner){
+        let prev[0] = runner[0];
+
+        }
+        else{
+        let runner[1] = runner-res;
+        }
+
+        return (res+2);
     }
 
     /** De-allocates the given object (cast as an array) by making
@@ -47,6 +108,10 @@ class Memory {
 
     /** Returns the maximal element contained in the given Array/object.
 	function int max(Array o) {
+	    // Hint: the algorithm you need to implement in Memory.alloc saves the
+        // size of the allocated block in the memory cell right before the
+        // start of the block, and this can be used to implement Memory.max.
+	    return;
     }
     */
 }

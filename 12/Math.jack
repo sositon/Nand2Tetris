@@ -9,8 +9,6 @@
  */
 class Math {
 
-    static Array TwoToThe; // arr of 2 powers
-
     /** Initializes the library. */
     function void init() {
     var int i,j;
@@ -73,15 +71,21 @@ class Math {
         }
         let x = Math.abs(x);
         let y = Math.abs(y);
-        if(( y > x ) | (y < 0)){
+        if( y > x ){
             return 0;
         }
-        let q = Math.divide(x,2*y);
-        if ((x-(2*q*y) < y)){
-            return sign * 2 * q;
+        let q = Math.divide(x, ^y);
+        if ((x - (q * (^y)) < y)){
+            if ( sign = 1 ){
+            return ^q;}
+            else{
+            return -(^q);}
         }
         else{
-            return (sign * 2 * q) + 1;
+            if ( sign = 1 ){
+            return ^q + 1;}
+            else{
+            return -(^q) + 1;}
         }
     }
 

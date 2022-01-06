@@ -78,7 +78,7 @@ class Output {
         do Output.create(64,30,51,51,59,59,59,27,3,30,0,0);  // @
         do Output.create(63,30,51,51,24,12,12,0,12,12,0,0);  // ?
 
-        do Output.create(65,0,0,0,0,0,0,0,0,0,0,0);          // A ** TO BE FILLED **
+        do Output.create(65,12,12,30,30,63,51,51,51,51,0,0); // A
         do Output.create(66,31,51,51,51,31,51,51,51,31,0,0); // B
         do Output.create(67,28,54,35,3,3,3,35,54,28,0,0);    // C
         do Output.create(68,15,27,51,51,51,51,51,27,15,0,0); // D
@@ -138,7 +138,7 @@ class Output {
         do Output.create(120,0,0,0,51,30,12,12,30,51,0,0);     // x
         do Output.create(121,0,0,0,51,51,51,62,48,24,15,0);    // y
         do Output.create(122,0,0,0,63,27,12,6,51,63,0,0);      // z
-        
+
         do Output.create(123,56,12,12,12,7,12,12,12,56,0,0);   // {
         do Output.create(124,12,12,12,12,12,12,12,12,12,0,0);  // |
         do Output.create(125,7,12,12,12,56,12,12,12,7,0,0);    // }
@@ -169,7 +169,7 @@ class Output {
 
         return;
     }
-    
+
     // Returns the character map (array of size 11) of the given character.
     // If the given character is invalid or non-printable, returns the
     // character map of a black square.
@@ -213,15 +213,14 @@ class Output {
             let address = address + 32;
             let i = i + 1;
         }
-        if ( cursor_x < 63 ){
-            let cursor_x = cursor_x + 1;
+        if ( cursor_x = 63 ){
+            do Output.println();
         }
         else {
-            do Output.println();
+            let cursor_x = cursor_x + 1;
         }
         return;
     }
-
     /** displays the given string starting at the cursor location,
      *  and advances the cursor appropriately. */
     function void printString(String s) {
@@ -249,12 +248,12 @@ class Output {
     /** Advances the cursor to the beginning of the next line. */
     function void println() {
         let cursor_x = 0;
-        if (cursor_y < 22){
-            let cursor_y = cursor_y + 1;
+        if (cursor_y = 22){
+            let cursor_y = 0;
         }
         // last line
         else{
-            let cursor_y = 0;
+            let cursor_y = cursor_y + 1;
         }
         return;
     }

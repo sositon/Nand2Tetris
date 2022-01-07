@@ -147,6 +147,7 @@ class String {
         do setIntHelper(val);
         return;
     }
+
     /** helper function. */
     method void setIntHelper (int val){
         var int last_digit;

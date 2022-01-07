@@ -152,7 +152,7 @@ class String {
     method void setIntHelper (int val){
         var int last_digit;
         var char c;
-        let last_digit = Math.mod(val, 10);
+        let last_digit = String.mod(val, 10);
         let c = digitToAscii(last_digit);
 
         if (val < 10){
@@ -163,6 +163,12 @@ class String {
             do appendChar(c);
         }
         return;
+    }
+
+    /** returns the int value of val%modNum */
+    function int mod(int val, int modNum){
+
+        return (val-((val/modNum)*modNum));
     }
 
     /** Returns the new line character. */

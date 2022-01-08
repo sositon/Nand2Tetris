@@ -21,6 +21,23 @@ class Screen {
 
     /** Initializes the Screen. */
     function void init() {
+    var int i ,j;
+
+        let white = 0;
+        let black = 1;
+        let screen = 16384;
+        let color = true;
+
+        let TwoToThe = Array.new(16);
+        let i = 0;
+        let j = 1;
+
+        while(i<16){
+            let TwoToThe[i] = j;
+            let i = i+1;
+            let j = j+j;
+        }
+        return;
     }
 
     /** Erases the entire screen. */
@@ -70,6 +87,17 @@ class Screen {
 		// division, using exactly one basic math/logical operation.
 		// In addition, calculating 16384 + y * 32 + x/16 should not use
 		// division or multiplication.
+		var int address, value;
+		let address = screen + Screen.multiply32(y) + Screen.division16(x);
+		let value = Memory.peek(address);
+		if (color){
+		    let value = value | TwoToThe[Screen.mod16(x)];
+		}
+		else{
+		    let value = value & ~(TwoToThe[Screen.mod16(x)]);
+		}
+		do Memory.poke(address, value);
+		return;
     }
 
     /** Draws a line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
@@ -91,6 +119,112 @@ class Screen {
 		}
 
 		return;
+    }
+
+    function void drawDiagonalLine(int x1, int y1, int x2, int y2)
+    {
+        var int dx, dy, a, b, diff;
+        var int baseX, baseY, endX, endY;
+        let a = 0;
+        let b = 0;
+        let diff = 0;
+
+
+        if (x1 < x2){
+            let dx = x2 - x1;
+            let baseX = x1;
+            let endX = x2;
+            let baseY = y1;
+            let endY = y2;
+        }
+        else{
+            let dx = x1 - x2;
+            let baseX = x2;
+            let endX = x1;
+            let baseY = y2;
+            let endY = y1;
+        }
+
+        //yorad
+        if (baseY < endY){
+           let dy = endY - baseY;
+           while(~(a>dx) & ~(b>dy)){ // caol od lo egano lasof
+               do Screen.drawPixel(baseX+a,baseY+b);
+               // calculate next point
+               if(diff < 0 ){
+                let a = a + 1;
+                let diff = diff + dy;
+               }
+               else{
+                let b = b + 1;
+                let diff = diff - dx;
+               }
+           }
+        }
+        // olim
+        else{
+
+           let dy = baseY - endY;
+           while(~(a>dx) & ~(b>dy)){ // caol od lo egano lasof
+           do Screen.drawPixel(baseX+a,baseY-b);
+           // calculate next point
+           if(diff < 0 ){
+            let a = a + 1;
+            let diff = diff + dy;
+           }
+           else{
+            let b = b + 1;
+            let diff = diff - dx;
+           }
+           }
+
+        }
+        return;
+
+
+    }
+
+
+    function void drawHorizontalLine(int x1, int y1, int x2, int y2){
+    // the case where x1 = x2
+    var int diff;
+    var int base;
+
+    if (y1 < y2){
+        let diff = y2 - y1;
+        let base = y1;
+    }
+    else{
+        let diff = y1 - y2;
+        let base = y2;
+    }
+    while( diff > 0 ){
+        do Screen.drawPixel(x1,base+diff);
+        let diff = diff - 1;
+    }
+
+     return;
+    }
+
+     function void drawVerticalLine(int x1, int y1, int x2, int y2){
+    // the case where y1 = y2
+    var int diff;
+    var int base;
+
+    if (x1 < x2){
+        let diff = x2 - x1;
+        let base = x1;
+    }
+    else{
+        let diff = x1 - x2;
+        let base = x2;
+    }
+    while( diff > 0 ){
+        do Screen.drawPixel(base+diff,y1);
+        let diff = diff - 1;
+    }
+
+     return;
     }
 
     /** Draws a filled rectangle whose top left corner is (x1, y1)

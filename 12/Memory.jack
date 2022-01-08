@@ -16,12 +16,17 @@ class Memory {
     static Array ram;
     static Array freeList;
 
+    static int Next;
+    static int Size;
+
     /** Initializes the class. */
     function void init() {
         let ram = 0;
+        let Next = 1;
+        let Size = 0;
         let freeList = 2048;
-        let freeList[0] = null; // next
-        let freeList[1] = 14335; // heapLength
+        let freeList[Next] = null; // next
+        let freeList[Size] = 14335; // heapLength
         return;
     }
 
@@ -61,35 +66,34 @@ class Memory {
             do Sys.error(5);
         }
 
-        while(runner[1] < size){
-        if (runner[0] = null)
+        while(runner[Size] < size){
+        if (runner[Next] = null)
             {
                 // no alc
                 return -1;
             }
-        }
+
             let prev = runner;
-            let runner = runner[0];
+            let runner = runner[Next];
         }
 
         // if no chunk found what to do?
         // change the old block
 
 
-        let len = runner[1];
-        let res = runner + len - size - 2;
-        let res[0] = null;
-        let res[1] = size+2;
+        let len = runner[Size];
+        let res = runner + len - size - 1;
+        let res[Size] = size+1;
 
         if (res = runner){
-        let prev[0] = runner[0];
+        let prev[Next] = runner[Next];
 
         }
         else{
-        let runner[1] = runner-res;
+        let runner[Size] = res - runner;
         }
 
-        return (res+2);
+        return (res+1);
     }
 
     /** De-allocates the given object (cast as an array) by making
@@ -100,11 +104,13 @@ class Memory {
         // 2. Insert segment into the freeLis
 
         var int Pointer;
-        let Pointer = o - 2;
+        let Pointer = o - 1;
         let Pointer = freeList;
         let freeList = Pointer;
         return;
-    }    
+    }
+
+
 
     /** Returns the maximal element contained in the given Array/object. */
 	function int max(Array o) {

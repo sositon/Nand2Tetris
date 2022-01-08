@@ -10,6 +10,7 @@
 class Math {
 
     static Array TwoToThe; // arr of 2 powers
+    static int rec_count;
 
     /** Initializes the library. */
     function void init() {
@@ -63,31 +64,39 @@ class Math {
      *  program's code, it handles it by invoking this method. In other words,
      *  the Jack expressions x/y and divide(x,y) return the same value.
      */
-    function int divide(int x, int y) {
-        // Check if y = 0 ??
+    function int divide(int x, int y){
+        let rec_count = 0;
+        return Math.divide_help(x, y);
+    }
+    function int divide_help(int x, int y) {
         var int q;
         var int sign;
+
         let sign = -1;
-        if (Math.bit(x, 15) = Math.bit(y, 15)){
+        if (((x < 0) & (y < 0)) || ((x > 0) & (y > 0))){
             let sign = 1;
         }
         let x = Math.abs(x);
         let y = Math.abs(y);
-        if( y > x ){
-            return 0;
-        }
-        let q = Math.divide(x, ^y);
-        if ((x - (q * (^y)) < y)){
+        if( y > x  | y < 0){return 0;}
+        let q = Math.divide_help(x, y+y);
+        if ((x - rec_count < y))
+        {
             if ( sign = 1 ){
-            return ^q;}
+                return q+q;
+            }
             else{
-            return -(^q);}
+                return -(q+q);
+            }
         }
-        else{
-            if ( sign = 1 ){
-            return ^q + 1;}
+        else
+        {
+            let rec_count = y + rec_count;
+            if (sign = 1){
+                return q+q + 1;
+            }
             else{
-            return -(^q) + 1;}
+                return -(q+q) + 1;}
         }
     }
 

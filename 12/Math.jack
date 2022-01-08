@@ -65,38 +65,30 @@ class Math {
      *  the Jack expressions x/y and divide(x,y) return the same value.
      */
     function int divide(int x, int y){
-        let rec_count = 0;
-        return Math.divide_help(x, y);
-    }
-    function int divide_help(int x, int y) {
-        var int q;
-        var int sign;
+        var int res, sign;
 
+        let rec_count = 0;
         let sign = -1;
-        if (((x < 0) & (y < 0)) || ((x > 0) & (y > 0))){
+        if (((x < 0) & (y < 0)) | ((x > 0) & (y > 0))){
             let sign = 1;
         }
         let x = Math.abs(x);
         let y = Math.abs(y);
+
+        let res = Math.divide_help(x, y);
+        if (sign=1){return res;}
+        else{return -res;}
+    }
+    function int divide_help(int x, int y) {
+        var int q;
         if( y > x  | y < 0){return 0;}
         let q = Math.divide_help(x, y+y);
-        if ((x - rec_count < y))
-        {
-            if ( sign = 1 ){
-                return q+q;
-            }
-            else{
-                return -(q+q);
-            }
+        if ((x - rec_count) < y){
+            return q+q;
         }
-        else
-        {
-            let rec_count = y + rec_count;
-            if (sign = 1){
-                return q+q + 1;
-            }
-            else{
-                return -(q+q) + 1;}
+        else{
+            let rec_count = rec_count + y;
+            return q+q+1;
         }
     }
 

@@ -107,14 +107,24 @@ class Screen {
 		// Also, the case where y1 == y2 can be implemented efficiently by
 		// trying to draw as many pixels as possible in a single assignment,
 		// similarly to Fill in project 4.
-
+        var int tmp;
 		if (~(x2 - x1 = 0) & ~(y2 - y1 = 0)){
 		    do Screen.drawDiagonalLine(x1, y1, x2, y2);
 		}
-		if (x2 = x1){
+		if (y2 = y1){
+		    if (x1 > x2){
+		        let tmp = x1;
+		        let x1 = x2;
+		        let x2 = tmp;
+		    }
 		    do Screen.drawHorizontalLine(x1, y1, x2, y2);
 		}
-		if (y2 = y1){
+		if (x2 = x1){
+		    if (y1 > y2){
+		        let tmp = y1;
+		        let y1 = y2;
+		        let y2 = tmp;
+		    }
 		    do Screen.drawVerticalLine(x1, y1, x2, y2);
 		}
 
@@ -184,48 +194,48 @@ class Screen {
 
     }
 
+    function void fill_register(int x1, int x2, int y){
+        while(~(x1>x2)){
+            do Screen.drawPixel(x1, y);
+            let x1 = x1 + 1;
+        }
+        return;
+    }
 
     function void drawHorizontalLine(int x1, int y1, int x2, int y2){
-    // the case where x1 = x2
-    var int diff;
-    var int base;
+        // the case where y1 = y2
+        var int address_1, address_2;
 
-    if (y1 < y2){
-        let diff = y2 - y1;
-        let base = y1;
-    }
-    else{
-        let diff = y1 - y2;
-        let base = y2;
-    }
-    while( diff > 0 ){
-        do Screen.drawPixel(x1,base+diff);
-        let diff = diff - 1;
-    }
-
-     return;
+        let address_1 = Screen.multiply32(y1) + Screen.division16(x1) + screen;
+        let address_2 = Screen.multiply32(y1) + Screen.division16(x2) + (Screen.mod16(x2)=0)+ screen;
+        if (address_1 = address_2){
+            do Screen.fill_register(x1, x2, y1);
+        }
+        else{
+            if (~(Screen.mod16(x1) = 0)){
+                do Screen.fill_register(x1, x1 + (16 - Screen.mod16(x1)), y1);
+                let address_1 = address_1 + 1;
+            }
+            if (~(Screen.mod16(x2) = 0)){
+                do Screen.fill_register(x2 - Screen.mod16(x2), x2, y1);
+                let address_2 = address_2 - 1;
+            }
+            while(~(address_1 > address_2)){
+                do Memory.poke(address_1, color);
+                let address_1 = address_1 + 1;
+            }
+        }
+        return;
     }
 
      function void drawVerticalLine(int x1, int y1, int x2, int y2){
-    // the case where y1 = y2
-    var int diff;
-    var int base;
-
-    if (x1 < x2){
-        let diff = x2 - x1;
-        let base = x1;
-    }
-    else{
-        let diff = x1 - x2;
-        let base = x2;
-    }
-    while( diff > 0 ){
-        do Screen.drawPixel(base+diff,y1);
-        let diff = diff - 1;
-    }
-
-     return;
-    }
+        // the case where x1 = x2
+         while(~(y1 > y2)){
+            do Screen.drawPixel(x1, y1);
+            let y1 = y1 + 1;
+         }
+         return;
+     }
 
     /** Draws a filled rectangle whose top left corner is (x1, y1)
      * and bottom right corner is (x2,y2), using the current color. */

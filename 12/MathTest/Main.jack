@@ -29,7 +29,10 @@ class Main {
         let r[11] = Math.max(123, -345);   // 123
         let r[12] = Math.abs(27);          // 27
         let r[13] = Math.abs(-32767);      // 32767
-        
+
+        let r[14] = 32767/5;               // 6553
+        let r[15] = -32767/100;              // -327
+
         return;
     }
 }

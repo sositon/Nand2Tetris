@@ -118,10 +118,12 @@ class Memory {
         // size of the allocated block in the memory cell right before the
         // start of the block, and this can be used to implement Memory.max.
 	    var int length, max, i;
-	    let length = o[-1];
+		var Array Pointer;
+	    let Pointer = o-1;
+		let length = Pointer[0];
 	    let max = o[0];
 	    let i = 0;
-	    while (i < length){
+	    while (i < (length-1)){
 	        if (max < o[i]){
 	            let max = o[i];
 	        }

@@ -352,7 +352,7 @@ class CompilationEngine:
                 self.vm.write_pop(self.sy.POINTER, 1)
                 self.vm.write_push(self.sy.THAT, 0)
                 self.tokenizer.advance()  # eats ']'
-            # func
+            # func - I think here its always a method and never a function
             elif self.tokenizer.cur_token == OPEN_PARENTHESIS:
                 self.tokenizer.advance()  # eats "("
                 self.vm.write_push(self.sy.POINTER, 0)
@@ -360,7 +360,7 @@ class CompilationEngine:
                 self.tokenizer.advance()  # eats ")"
                 self.vm.write_call(f"{self.class_type}.{first_name}",
                                    n_param+1)
-            # method
+            # method - here it could be either one of them method/func
             elif self.tokenizer.cur_token == DOT:
                 # if Method push reference to the object
                 if self.sy.type_of(first_name):  # if varName

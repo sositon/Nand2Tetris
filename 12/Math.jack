@@ -107,6 +107,15 @@ class Math {
         return y;
     }
 
+    /** Returns x^y, for x,y > 0*/
+    function int exponent(int x, int y){
+        var int temp;
+        if (y=1){return x;}
+        let temp = Math.exponent(x, #y);
+        if (y&1){return x*temp*temp;}
+        else{return temp*temp;}
+    }
+
     /** Returns the greater number. */
     function int max(int a, int b) {
         if (a > b){
